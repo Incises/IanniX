@@ -17,6 +17,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ---------------------------
+option(USE_FFMPEG "Enable FFmpeg support" OFF)
+option(USE_TRACKPADS "Enable Wacom & Trackpads support" OFF)
+option(USE_KINECT "Enable Kinect support" OFF)
+# ---------------------------
+
+# ---------------------------
 # Qt 版本集中控制（仅此处）
 # 只允许 5 或 6，默认 5
 # ---------------------------
@@ -241,9 +247,15 @@ if(APPLE)
 endif() 
 
 # ---- FFmpeg ----
-option(USE_FFMPEG "Enable FFmpeg support" OFF)
+
 
 if(USE_FFMPEG)
+
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
+        libavcodec libavutil libavformat libswscale
+    )
+
     add_definitions(-DFFMPEG_INSTALLED)
 
     set(FFMPEG_SOURCES
@@ -256,12 +268,17 @@ if(USE_FFMPEG)
         gui/qffmpeg/QVideoDecoder.h
     )
 
-    add_library(ffmpeg_module STATIC ${FFMPEG_SOURCES} ${FFMPEG_HEADERS})
-
-    target_include_directories(ffmpeg_module PRIVATE 
-        ${CMAKE_SOURCE_DIR}/gui/qffmpeg
-    )
+    set(FFMPEG_LIBS PkgConfig::FFMPEG)
     
+    list(APPEND OPTIONAL_INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}/gui/qffmpeg
+    )
+
+    list(APPEND OPTIONAL_LIBS
+        ${FFMPEG_LIBS}
+    )
+
+endif()  
 
 # Sources
 list(APPEND SOURCES
@@ -301,13 +318,32 @@ add_executable(${PROJECT_NAME}
 # Include paths 保持原来的路径
 target_include_directories(${PROJECT_NAME} PRIVATE
     .
-    misc messages transport render geometry geometry/qmuparser objects gui gui/qjsedit items interfaces interfaces/qextserialport interfaces/qrtmidi interfaces/qwebsockets interfaces/artnet interfaces/zeroconf
+    misc
+    messages
+    transport
+    render
+    geometry
+    geometry/qmuparser
+    objects
+    gui
+    gui/qjsedit
+    items
+    interfaces
+    interfaces/qextserialport
+    interfaces/qrtmidi
+    interfaces/qwebsockets
+    interfaces/artnet
+    interfaces/zeroconf
+    ${OPTIONAL_INCLUDES}
 )
 
 # ---------------------------
 # 链接 Qt（统一使用 QT_LIBS 变量）
 # ---------------------------
-target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    ${QT_LIBS}
+    ${OPTIONAL_LIBS}    
+)
 
 # ---------------------------
 # 平台特定库
