@@ -4,4 +4,8 @@
 *.app/
 *.mov
 *-build
+*.swp
 Thumbs.db
+build/
+# Qt Designer generated UI headers
+ui_*.h
