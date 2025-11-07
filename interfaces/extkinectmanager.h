@@ -23,7 +23,11 @@
 #include <QPixmap>
 #include <QLabel>
 #include <QKeyEvent>
+#ifdef USE_GLWIDGET
 #include <QGLWidget>
+#else
+#include <QOpenGLWidget>
+#endif
 #include <QPainter>
 #include <qmath.h>
 #include "qkinect/QKinect.h"

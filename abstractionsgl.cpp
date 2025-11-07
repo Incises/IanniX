@@ -371,8 +371,15 @@ bool OpenGlTexture::pushTexture() {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
             glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+            const GLubyte *pixels = nullptr;
+#ifdef USE_GLWIDGET
+            pixels = QGLWidget::convertToGLFormat(sourceImage).bits();
+#else
+            QImage glFormattedImage = sourceImage.convertToFormat(QImage::Format_RGBA8888).mirrored();
+            pixels = glFormattedImage.bits();
+#endif
             if(filename == "manual") {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB , size.width(), size.height(), 0, GL_RGB , GL_UNSIGNED_BYTE, QGLWidget::convertToGLFormat(sourceImage).bits());
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB , size.width(), size.height(), 0, GL_RGB , GL_UNSIGNED_BYTE, pixels);
                 //if(!verboseTexte.isEmpty())    qDebug("%s (GL_RGB - GL_UNSIGNED_BYTE / %f - %f)", qPrintable(verboseTexte), size.width(), size.height());
             }
             else if(filename == "textureFloat") {
@@ -380,7 +387,7 @@ bool OpenGlTexture::pushTexture() {
                 //if(!verboseTexte.isEmpty())    qDebug("%s (GL_RGBA - GL_DOUBLE / %f - %f)", qPrintable(verboseTexte), size.width(), size.height());
             }
             else {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.width(), size.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, QGLWidget::convertToGLFormat(sourceImage).bits());
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.width(), size.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
                 //if(!verboseTexte.isEmpty())    qDebug("%s (GL_RGBA - GL_UNSIGNED_BYTE / %f - %f)", qPrintable(verboseTexte), size.width(), size.height());
             }
             glDisable(GL_TEXTURE_2D);

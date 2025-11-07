@@ -1,5 +1,8 @@
+#ifdef USE_GLWIDGET
 #include <QGLWidget>
-
+#else
+#include <QOpenGLWidget>
+#endif
 class UiRenderSyphon {
 public:
     explicit UiRenderSyphon();

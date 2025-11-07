@@ -29,7 +29,6 @@
 #include <QGLFormat>
 #else
 #include <QOpenGLWidget>
-#include <QGLWidget>
 #include <QOpenGLFunctions>
 #endif
 

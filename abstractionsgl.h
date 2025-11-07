@@ -15,7 +15,6 @@
 #include <QGLWidget>
 #include <QGLFormat>
 #else
-#include <QGLWidget>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #endif

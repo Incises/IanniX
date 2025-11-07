@@ -100,7 +100,9 @@ bool UiRender::loadTexture(UiRenderTexture *texture, bool gl) {
 #ifdef USE_GLWIDGET
             QImage tex = QGLWidget::convertToGLFormat(QImage(texture->filename.absoluteFilePath()));
 #else
-            QImage tex = QGLWidget::convertToGLFormat(QImage(texture->filename.absoluteFilePath()));
+            // Load the image and convert to an OpenGL-friendly RGBA format, mirrored to match GL origin
+            QImage img(texture->filename.absoluteFilePath());
+            QImage tex = img.convertToFormat(QImage::Format_RGBA8888).mirrored();
 #endif
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.bits());
 #ifdef Q_OS_MAC
