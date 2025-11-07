@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Linux GCC13 Qt5",
+            "name": "Linux GCC13 Qt 5.15",
             "includePath": [
                 "${workspaceFolder}/**",
                 "/usr/include/x86_64-linux-gnu/qt5",
@@ -10,7 +10,9 @@
                 "/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
                 "/usr/include/x86_64-linux-gnu/qt5/QtWidgets"
             ],
-            "defines": [],
+            "defines": [
+                "QT5"
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
