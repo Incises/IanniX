@@ -25,10 +25,10 @@
 #define INTERFACESERIAL_H
 
 #include <QWidget>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include "misc/options.h"
 #include "messages/messagemanager.h"
-#include "qextserialport/qextserialport.h"
-#include "qextserialport/qextserialenumerator.h"
 
 namespace Ui {
 class InterfaceSerial;
@@ -55,12 +55,12 @@ private:
     void timerEvent(QTimerEvent *);
 
 private:
-    QextSerialPort *port;
-    QList<BaudRateType> baudrateEnum;
-    QList<DataBitsType> databitsEnum;
-    QList<ParityType>   parityEnum;
-    QList<StopBitsType> stopbitsEnum;
-    QList<FlowType>     flowEnum;
+    QSerialPort *port;
+    QList<qint32> baudrateEnum;
+    QList<QSerialPort::DataBits> databitsEnum;
+    QList<QSerialPort::Parity>   parityEnum;
+    QList<QSerialPort::StopBits> stopbitsEnum;
+    QList<QSerialPort::FlowControl> flowEnum;
     QByteArray reception;
 private slots:
     void parse();

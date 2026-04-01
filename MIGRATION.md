@@ -516,7 +516,7 @@ be replaced entirely (see [Section 20](#20-vendored-libraries)).
 
 | File | Line |
 |------|------|
-| `interfaces/qextserialport/qextserialenumerator_win.cpp` | 233 |
+| `interfaces/qextserialwport/qextserialenumerator_win.cpp` | 233 |
 | `interfaces/interfaceosc.cpp` | 211 |
 
 ### Migration path
@@ -553,21 +553,15 @@ data.canConvert<QColor>()
 
 ## 20. Vendored libraries
 
-### qextserialport (interfaces/qextserialport/)
+### qextserialport -- DONE, removed
 
-- **Age:** 2000-2011, "QESP2.0"
-- **Used by:** `interfaces/interfaceserial.h/.cpp` only
-- **Replacement:** `QSerialPort` + `QSerialPortInfo` (Qt 5.1+, `Qt5::SerialPort`)
-- **Coupling:** Low-medium.  Isolated to one interface class.
-- **Effort:** Moderate -- API mapping for baud/parity/flow/DTR/RTS/enumeration.
+Replaced with `QSerialPort` + `QSerialPortInfo` (`Qt5::SerialPort`).
+The vendored `interfaces/qextserialport/` directory has been deleted.
 
-### qwebsockets (interfaces/qwebsockets/)
+### qwebsockets -- DONE, removed
 
-- **Age:** Early Qt5 era, no TLS, no subprotocols
-- **Used by:** `interfaces/interfacehttp.h/.cpp` only
-- **Replacement:** `QWebSocket` + `QWebSocketServer` (Qt 5.3+, `Qt5::WebSockets`)
-- **Coupling:** Medium.  Confined to `InterfaceHttp` but involves signal/slot rewiring.
-- **Effort:** Moderate -- different class names and connection semantics.
+Replaced with `QWebSocket` + `QWebSocketServer` (`Qt5::WebSockets`).
+The vendored `interfaces/qwebsockets/` directory has been deleted.
 
 ### qrtmidi (interfaces/qrtmidi/)
 

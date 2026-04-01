@@ -23,6 +23,7 @@
 
 #include "interfacehttp.h"
 #include "ui_interfacehttp.h"
+#include <QRegularExpression>
 
 InterfaceHttp::InterfaceHttp(QWidget *parent) :
     NetworkInterface(parent),
@@ -37,7 +38,7 @@ InterfaceHttp::InterfaceHttp(QWidget *parent) :
     connect(httpServer, SIGNAL(parseSocket(QTcpSocket*)),     SLOT(parseSocket(QTcpSocket*)));
 
     //Websockets server
-    webSocketServer = new WebSocketServer(this);
+    webSocketServer = new QWebSocketServer(QStringLiteral("IanniX"), QWebSocketServer::NonSecureMode, this);
     connect(webSocketServer, SIGNAL(newConnection()), SLOT(webSocketsNewConnection()));
 
     //Html template
@@ -81,7 +82,7 @@ bool InterfaceHttpServer::portChanged(quint16 port) {
 
 
 void InterfaceHttp::webSocketsNewConnection() {
-    WebSocket *webSocket = webSocketServer->nextPendingConnection();
+    QWebSocket *webSocket = webSocketServer->nextPendingConnection();
     connect(webSocket, SIGNAL(textMessageReceived(QString)),      SLOT(webSocketsProcessMessage(QString)));
     connect(webSocket, SIGNAL(binaryMessageReceived(QByteArray)), SLOT(webSocketsProcessBinaryMessage(QByteArray)));
     connect(webSocket, SIGNAL(disconnected()),                    SLOT(webSocketsSocketDisconnected()));
@@ -89,23 +90,23 @@ void InterfaceHttp::webSocketsNewConnection() {
     webSocketsUpdateConnectedClients();
 }
 void InterfaceHttp::webSocketsProcessMessage(const QString &message) {
-    WebSocket *webSocket = qobject_cast<WebSocket *>(sender());
+    QWebSocket *webSocket = qobject_cast<QWebSocket *>(sender());
     if(webSocket) {
         QStringList commandItems = message.split(COMMAND_END, QString::SkipEmptyParts);;
         QString response;
         foreach(const QString & command, commandItems)
             response += MessageManager::incomingMessage(MessageIncomming("http", webSocket->peerAddress().toString(), webSocket->peerPort(), "", command, command.split(" ", QString::SkipEmptyParts)), true, (command != "goto"));
         if(!response.isEmpty())
-            webSocket->send(response);
+            webSocket->sendTextMessage(response);
     }
 }
 void InterfaceHttp::webSocketsProcessBinaryMessage(const QByteArray &) {
-    WebSocket *webSocket = qobject_cast<WebSocket *>(sender());
+    QWebSocket *webSocket = qobject_cast<QWebSocket *>(sender());
     if(webSocket) {
     }
 }
 void InterfaceHttp::webSocketsSocketDisconnected() {
-    WebSocket *webSocket = qobject_cast<WebSocket *>(sender());
+    QWebSocket *webSocket = qobject_cast<QWebSocket *>(sender());
     if(webSocket) {
         webSocketClients.removeAll(webSocket);
         webSocket->deleteLater();
@@ -114,7 +115,7 @@ void InterfaceHttp::webSocketsSocketDisconnected() {
 }
 void InterfaceHttp::webSocketsUpdateConnectedClients() {
     QString clientsWebSockets;
-    foreach(WebSocket *webSocket, webSocketClients)
+    foreach(QWebSocket *webSocket, webSocketClients)
         clientsWebSockets += QString("%1:%2\n").arg(webSocket->peerAddress().toString()).arg(webSocket->peerPort());
     clientsWebSockets.chop(1);
     if(webSocketClients.count() == 0)        ui->clientsWebSockets->setText(tr("No websocket connected"));
@@ -180,7 +181,7 @@ void InterfaceHttp::parseSocket(QTcpSocket *socket) {
     if(!enable)
         return;
 
-    QStringList tokens = QString(socket->readLine()).split(QRegExp("[ \r\n][ \r\n]*"));
+    QStringList tokens = QString(socket->readLine()).split(QRegularExpression("[ \\r\\n]+"));
     if((tokens.count() > 1) && (tokens.at(0) == "GET")) {
         QUrl url(tokens.at(1));
 

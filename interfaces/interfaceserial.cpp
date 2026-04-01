@@ -31,36 +31,22 @@ InterfaceSerial::InterfaceSerial(QWidget *parent) :
     port = 0;
     connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
 
-    baudrateEnum << BAUD110;
-    baudrateEnum << BAUD300;
-    baudrateEnum << BAUD600;
-    baudrateEnum << BAUD1200;
-    baudrateEnum << BAUD2400;
-    baudrateEnum << BAUD4800;
-    baudrateEnum << BAUD9600;
-    baudrateEnum << BAUD19200;
-    baudrateEnum << BAUD38400;
-    baudrateEnum << BAUD57600;
-    baudrateEnum << BAUD115200;
+    baudrateEnum << 110 << 300 << 600 << 1200 << 2400
+                 << 4800 << 9600 << 19200 << 38400 << 57600 << 115200;
 
-    databitsEnum << DATA_5;
-    databitsEnum << DATA_6;
-    databitsEnum << DATA_7;
-    databitsEnum << DATA_8;
+    databitsEnum << QSerialPort::Data5 << QSerialPort::Data6
+                 << QSerialPort::Data7 << QSerialPort::Data8;
 
-    parityEnum   << PAR_NONE;
-    parityEnum   << PAR_ODD;
-    parityEnum   << PAR_EVEN;
-    parityEnum   << PAR_SPACE;
+    parityEnum   << QSerialPort::NoParity   << QSerialPort::OddParity
+                 << QSerialPort::EvenParity << QSerialPort::SpaceParity;
 
-    stopbitsEnum << STOP_1;
-    stopbitsEnum << STOP_2;
+    stopbitsEnum << QSerialPort::OneStop << QSerialPort::TwoStop;
 
-    flowEnum     << FLOW_OFF;
-    flowEnum     << FLOW_HARDWARE;
-    flowEnum     << FLOW_XONXOFF;
+    flowEnum     << QSerialPort::NoFlowControl
+                 << QSerialPort::HardwareControl
+                 << QSerialPort::SoftwareControl;
 
-    //Interfaces link
+    //Bind UI widgets to persistent settings
     enable.setAction(ui->enable, "interfaceSerialEnable");
 
     portName  .setAction(ui->portCombo,   "interfaceSerialPortname");
@@ -83,21 +69,17 @@ InterfaceSerial::InterfaceSerial(QWidget *parent) :
     portFlow   = 0;
 
     connect(ui->enable, SIGNAL(toggled(bool)), SLOT(portChanged()));
-    //Valeurs par défaut
-    /*
-    portStr = "COM1\nBAUD115200\nDATA_8\nPAR_NONE\nSTOP_1\nFLOW_OFF";
-    portStr = "/dev/tty.usbmodemfa141\nBAUD115200\nDATA_8\nPAR_NONE\nSTOP_1\nFLOW_OFF";
-    */
+    //Defaults: 115200 baud, 8-N-1, no flow control (set via combo indices above)
 
     timerEvent(0);
     startTimer(5000);
 }
 
 void InterfaceSerial::timerEvent(QTimerEvent *) {
-    QList<QextPortInfo> portsInfo = QextSerialEnumerator::getPorts();
-    foreach(const QextPortInfo &portInfo, portsInfo)
-        if(ui->portCombo->findText(portInfo.portName) < 0)
-            ui->portCombo->addItem(portInfo.portName);
+    const auto portsInfo = QSerialPortInfo::availablePorts();
+    for (const QSerialPortInfo &portInfo : portsInfo)
+        if (ui->portCombo->findText(portInfo.portName()) < 0)
+            ui->portCombo->addItem(portInfo.portName());
 }
 
 void InterfaceSerial::portChanged() {
@@ -106,7 +88,7 @@ void InterfaceSerial::portChanged() {
             port->close();
             delete port;
         }
-        port = new QextSerialPort(portName, QextSerialPort::EventDriven);
+        port = new QSerialPort(portName, this);
         if(port) {
             port->setBaudRate(baudrateEnum.at(portBaud.val()));
             port->setFlowControl(flowEnum .at(portFlow.val()));
@@ -163,7 +145,7 @@ bool InterfaceSerial::send(const Message &message, QStringList *messageSent) {
     if(!enable)
         return false;
 
-    //Write a message on the opened socket
+    //Send ASCII message terminated by COMMAND_END_BYTE over serial
     port->write(message.getAsciiMessage() + COMMAND_END_BYTE);
 
     //Log in console

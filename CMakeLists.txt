@@ -48,21 +48,21 @@ if(QT_VERSION STREQUAL "6")
         "Qt6 support is experimental. QScriptEngine has been removed in Qt6; "
         "the build will fail until the QScript->QJSEngine migration is complete."
     )
-    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Xml OpenGL)
+    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Xml OpenGL SerialPort WebSockets)
     find_package(Qt6 QUIET COMPONENTS Qml)
     add_compile_definitions(QT6)
     set(QT_LIBS
-        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Xml Qt6::OpenGL
+        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Xml Qt6::OpenGL Qt6::SerialPort Qt6::WebSockets
     )
     if(Qt6Qml_FOUND)
         list(APPEND QT_LIBS Qt6::Qml)
     endif()
 else()
     # --- Qt5 (default, fully supported) ---
-    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network Script Xml OpenGL)
+    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network Script Xml OpenGL SerialPort WebSockets)
     add_compile_definitions(QT5)
     set(QT_LIBS
-        Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::Script Qt5::Xml Qt5::OpenGL
+        Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::Script Qt5::Xml Qt5::OpenGL Qt5::SerialPort Qt5::WebSockets
     )
 endif()
 
@@ -206,37 +206,12 @@ set(INTERFACES_FORMS
     interfaces/interfacedirect.ui interfaces/interfacesyphon.ui
 )
 
-# -- Vendored: qextserialport --
-set(SERIAL_HEADERS
-    interfaces/qextserialport/qextserialport.h
-    interfaces/qextserialport/qextserialenumerator.h
-    interfaces/qextserialport/qextserialport_global.h
-    interfaces/qextserialport/qextserialport_p.h
-    interfaces/qextserialport/qextserialenumerator_p.h
-)
-set(SERIAL_SOURCES
-    interfaces/qextserialport/qextserialport.cpp
-    interfaces/qextserialport/qextserialenumerator.cpp
-)
-
 # -- Vendored: RtMidi --
 set(RTMIDI_HEADERS
     interfaces/qrtmidi/RtMidi.h interfaces/qrtmidi/RtError.h
 )
 set(RTMIDI_SOURCES
     interfaces/qrtmidi/RtMidi.cpp
-)
-
-# -- Vendored: WebSockets --
-set(WEBSOCKET_HEADERS
-    interfaces/qwebsockets/websocket.h interfaces/qwebsockets/websocketserver.h
-    interfaces/qwebsockets/websocketprotocol.h interfaces/qwebsockets/handshakerequest.h
-    interfaces/qwebsockets/handshakeresponse.h interfaces/qwebsockets/dataprocessor.h
-)
-set(WEBSOCKET_SOURCES
-    interfaces/qwebsockets/websocket.cpp interfaces/qwebsockets/websocketserver.cpp
-    interfaces/qwebsockets/websocketprotocol.cpp interfaces/qwebsockets/handshakerequest.cpp
-    interfaces/qwebsockets/handshakeresponse.cpp interfaces/qwebsockets/dataprocessor.cpp
 )
 
 # -- AbstractionsGL --
@@ -246,32 +221,6 @@ set(ABSTRACTIONS_SOURCES abstractionsgl.cpp)
 # ---------------------------------------------------------------------------
 # Platform-conditional sources
 # ---------------------------------------------------------------------------
-
-# qextserialport platform backends
-if(WIN32)
-    list(APPEND SERIAL_SOURCES
-        interfaces/qextserialport/qextserialport_win.cpp
-        interfaces/qextserialport/qextserialenumerator_win.cpp
-    )
-elseif(APPLE)
-    list(APPEND SERIAL_SOURCES
-        interfaces/qextserialport/qextserialport_unix.cpp
-        interfaces/qextserialport/qextserialenumerator_osx.cpp
-    )
-elseif(UNIX)
-    list(APPEND SERIAL_SOURCES
-        interfaces/qextserialport/qextserialport_unix.cpp
-    )
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        list(APPEND SERIAL_SOURCES
-            interfaces/qextserialport/qextserialenumerator_linux.cpp
-        )
-    else()
-        list(APPEND SERIAL_SOURCES
-            interfaces/qextserialport/qextserialenumerator_unix.cpp
-        )
-    endif()
-endif()
 
 # macOS-only: Artnet
 set(ARTNET_HEADERS "")
@@ -386,9 +335,7 @@ set(ALL_SOURCES
     ${GUI_SOURCES}         ${GUI_HEADERS}
     ${ITEMS_SOURCES}       ${ITEMS_HEADERS}
     ${INTERFACES_SOURCES}  ${INTERFACES_HEADERS}
-    ${SERIAL_SOURCES}      ${SERIAL_HEADERS}
     ${RTMIDI_SOURCES}      ${RTMIDI_HEADERS}
-    ${WEBSOCKET_SOURCES}   ${WEBSOCKET_HEADERS}
     ${ABSTRACTIONS_SOURCES} ${ABSTRACTIONS_HEADERS}
     ${ARTNET_SOURCES}      ${ARTNET_HEADERS}
     ${ZEROCONF_SOURCES}    ${ZEROCONF_HEADERS}
@@ -443,9 +390,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/qjsedit
     ${CMAKE_CURRENT_SOURCE_DIR}/items
     ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
-    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/qextserialport
     ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/qrtmidi
-    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/qwebsockets
     ${OPTIONAL_INCLUDES}
 )
 
@@ -494,14 +439,6 @@ elseif(UNIX)
         target_include_directories(${PROJECT_NAME} PRIVATE ${ALSA_INCLUDE_DIRS})
         target_link_libraries(${PROJECT_NAME} PRIVATE ${ALSA_LIBRARIES})
 
-        # libudev (optional; without it serial port enumeration is limited)
-        pkg_check_modules(LIBUDEV libudev)
-        if(LIBUDEV_FOUND)
-            target_include_directories(${PROJECT_NAME} PRIVATE ${LIBUDEV_INCLUDE_DIRS})
-            target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBUDEV_LIBRARIES})
-        else()
-            target_compile_definitions(${PROJECT_NAME} PRIVATE QESP_NO_UDEV)
-        endif()
     endif()
 endif()
 
@@ -588,6 +525,5 @@ message(STATUS "  Kinect     : ${USE_KINECT}")
 message(STATUS "  Wacom      : ${USE_WACOM}")
 if(UNIX AND NOT APPLE)
     message(STATUS "  ALSA       : ${ALSA_FOUND}")
-    message(STATUS "  libudev    : ${LIBUDEV_FOUND}")
 endif()
 message(STATUS "-----------------------------------------------")

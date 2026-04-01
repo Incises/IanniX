@@ -33,10 +33,10 @@
 #include <QDir>
 #include <QBuffer>
 #include <QApplication>
+#include <QWebSocket>
+#include <QWebSocketServer>
 #include "misc/options.h"
 #include "messages/messagemanager.h"
-#include "qwebsockets/websocketserver.h"
-#include "qwebsockets/websocket.h"
 
 
 namespace Ui {
@@ -88,8 +88,8 @@ private slots:
     void parseSocket(QTcpSocket*);
 
 private:
-    WebSocketServer*  webSocketServer;
-    QList<WebSocket*> webSocketClients;
+    QWebSocketServer*  webSocketServer;
+    QList<QWebSocket*> webSocketClients;
 private slots:
     void portWebSocketsChanged();
     void webSocketsNewConnection();
