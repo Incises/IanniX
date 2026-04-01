@@ -42,11 +42,7 @@ public:
     virtual void keyPressEvent(QKeyEvent *)            {}
 };
 
-#ifdef QT4
-class UiRenderPreview : public QGLWidget {
-#else
 class UiRenderPreview : public QOpenGLWidget {
-#endif
     Q_OBJECT
 
 public:
@@ -71,12 +67,10 @@ protected:
     void resizeGL(int width, int height);
     void paintGL();
 
-#ifdef QT5
 public slots:
     void updateGL() {
         update();
     }
-#endif
 
 signals:
     

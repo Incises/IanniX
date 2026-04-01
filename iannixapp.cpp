@@ -30,18 +30,10 @@
 
 
 int main(int argc, char *argv[]) {
-#ifdef QT4
-    QTextCodec::setCodecForTr      (QTextCodec::codecForName("UTF-8"));
-    QTextCodec::setCodecForLocale  (QTextCodec::codecForName("UTF-8"));
-    QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
-#endif
-
     IanniXApp iannixApp(argc, argv);
 
-#ifdef QT5
     qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
     qApp->setAttribute(Qt::AA_ShareOpenGLContexts);
-#endif
 
     //QString locale = QLocale::system().name();
     //QTranslator translator;
@@ -95,11 +87,7 @@ void IanniXApp::launch(int &argc, char **argv) {
     pathApplicationDir.cdUp();
     pathApplicationDir.cdUp();
 #endif
-#ifdef QT4
-    Application::pathDocuments   = QFileInfo(QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/IanniX");
-#else
     Application::pathDocuments   = QFileInfo(QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation).first() + "/IanniX");
-#endif
     Application::pathApplication = QFileInfo(pathApplicationDir.absolutePath());
     Application::pathCurrent     = QFileInfo(QDir::currentPath());
     if((Application::pathApplication.absoluteFilePath().endsWith("/IanniX-build-64")) || (Application::pathApplication.absoluteFilePath().endsWith("/IanniX-build-32")))

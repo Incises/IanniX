@@ -60,7 +60,6 @@ if(QT_VERSION STREQUAL "6")
 else()
     # --- Qt5 (default, fully supported) ---
     find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network Script Xml OpenGL SerialPort WebSockets)
-    add_compile_definitions(QT5)
     set(QT_LIBS
         Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::Script Qt5::Xml Qt5::OpenGL Qt5::SerialPort Qt5::WebSockets
     )

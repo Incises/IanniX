@@ -623,13 +623,9 @@ bool Message::addString(QString str, const QString & name, quint16) {
         return true;
     }
     else if(type == MessagesTypeHttp) {
-#ifdef QT4
-        urlMessage.addQueryItem(name, str);
-#else
         QUrlQuery urlQuery(urlMessage);
         urlQuery.addQueryItem(name, str);
         urlMessage.setQuery(urlQuery);
-#endif
         return true;
     }
     else if(type == MessagesTypeTcp) {
@@ -657,13 +653,9 @@ bool Message::addFloat(float f, const QString & name, quint16) {
         return true;
     }
     else if(type == MessagesTypeHttp) {
-#ifdef QT4
-        urlMessage.addQueryItem(name, QString::number(f));
-#else
         QUrlQuery urlQuery(urlMessage);
         urlQuery.addQueryItem(name, QString::number(f));
         urlMessage.setQuery(urlQuery);
-#endif
         return true;
     }
     else if(type == MessagesTypeTcp) {
@@ -699,13 +691,9 @@ bool Message::addTimeTag(qint64 t, const QString & name, quint16) {
         return true;
     }
     else if(type == MessagesTypeHttp) {
-#ifdef QT4
-        urlMessage.addQueryItem(name, QString::number(t));
-#else
         QUrlQuery urlQuery(urlMessage);
         urlQuery.addQueryItem(name, QString::number(t));
         urlMessage.setQuery(urlQuery);
-#endif
         return true;
     }
     else if(type == MessagesTypeTcp) {

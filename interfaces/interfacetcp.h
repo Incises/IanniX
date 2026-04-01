@@ -46,11 +46,7 @@ public:
 public:
     bool portChanged(quint16 port);
 protected:
-#ifdef QT4
-    void incomingConnection(int handle);
-#else
     void incomingConnection(qintptr handle);
-#endif
 private slots:
     void readClient();
     void discardClient();

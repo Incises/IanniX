@@ -156,22 +156,12 @@ void InterfaceHttp::parseRequest(QNetworkReply *reply) {
 }
 
 
-//HTTP reception //TODO
-#ifdef QT4
-void InterfaceHttpServer::incomingConnection(int handle) {
-    QTcpSocket *socket = new QTcpSocket(this);
-    connect(socket, SIGNAL(readyRead()),    this, SLOT(readClient()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(discardClient()));
-    socket->setSocketDescriptor(handle);
-}
-#else
 void InterfaceHttpServer::incomingConnection(qintptr handle) {
     QTcpSocket *socket = new QTcpSocket(this);
     connect(socket, SIGNAL(readyRead()),    this, SLOT(readClient()));
     connect(socket, SIGNAL(disconnected()), this, SLOT(discardClient()));
     socket->setSocketDescriptor(handle);
 }
-#endif
 void InterfaceHttpServer::readClient() {
     QTcpSocket *socket = (QTcpSocket*)sender();
     if(socket->canReadLine())
@@ -190,11 +180,7 @@ void InterfaceHttp::parseSocket(QTcpSocket *socket) {
         picFormat.first = "png";
         picFormat.second = -1;
         bool isPic = false, isSync = false;
-#ifdef QT4
-        QList< QPair<QString, QString> > tokens = url.queryItems();
-#else
         QList< QPair<QString, QString> > tokens = QUrlQuery(url.query()).queryItems();
-#endif
         for(quint16 index = 0 ; index < tokens.count() ; index++) {
             QString first = tokens.at(index).first.toLower();
             if((first == "png") || (first == "jpg") || (first == "mjpg")) {

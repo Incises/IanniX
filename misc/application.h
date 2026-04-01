@@ -83,12 +83,8 @@ public slots:
     virtual void executeAsScript(const QString &script) = 0;
 };
 
-#ifdef QT5
 #define USE_OPENGLWIDGET
 //#define USE_GLWIDGET
-#else
-#define USE_GLWIDGET
-#endif
 
 
 enum EditingMode { EditingModeFree, EditingModePoint, EditingModeTriggers, EditingModeCircle };

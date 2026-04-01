@@ -155,12 +155,7 @@ void UiRender::capture(qreal scaleFactor) {
 #else
         if(capturedFramesStart) {
             capturedFramesStart = false;
-            //Sauvegarde
-#ifdef QT4
-            QString basePath = QDesktopServices::storageLocation(QDesktopServices::DesktopLocation) + "/IanniX_Capture_" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss") + "/";
-#else
             QString basePath = QStandardPaths::standardLocations(QStandardPaths::DesktopLocation).first() + "/IanniX_Capture_" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss") + "/";
-#endif
             QDir().mkpath(basePath);
             quint16 index = 0;
             foreach(const QImage &capturedFrame, capturedFrames)
@@ -182,19 +177,6 @@ bool UiRender::captureFrame(qreal scaleFactor, const QString &filename) {
     Render::forceTexture       = true;
     Render::forceFrustumInInit = true;
 
-#ifdef QT4 //TODO
-    if(filename.isEmpty()) {
-        QPixmap picture = renderPixmap(renderSize.width(), renderSize.height());
-        if(picture.isNull()) {
-            picture = QPixmap::fromImage(grabFrameBuffer(false));
-            (new UiMessageBox())->display(tr("Graphical card error"), tr("Due to hardware issue, the high resolution snapshot creation failed.\nA classical snapshot has been saved on your desktop."));
-        }
-        picture.save(QDesktopServices::storageLocation(QDesktopServices::DesktopLocation) + "/IanniX_Capture_" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss") + ".png");
-    } else {
-        QDir().mkpath(QFileInfo(filename).absoluteDir().absolutePath());
-        renderPixmap(renderSize.width(), renderSize.height()).save(filename);
-    }
-#else
     if(filename.isEmpty()) {
 #ifdef USE_GLWIDGET
         QPixmap picture = QPixmap::fromImage(grabFrameBuffer());
@@ -207,7 +189,6 @@ bool UiRender::captureFrame(qreal scaleFactor, const QString &filename) {
         QDir().mkpath(QFileInfo(filename).absoluteDir().absolutePath());
         renderPixmap(renderSize.width(), renderSize.height()).save(filename);
     }*/
-#endif
     Render::forceLists         = false;
     Render::forceTexture       = false;
     Render::forceFrustumInInit = false;
