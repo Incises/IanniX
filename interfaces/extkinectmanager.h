@@ -29,7 +29,7 @@
 #include <QOpenGLWidget>
 #endif
 #include <QPainter>
-#include <qmath.h>
+#include <QtMath>
 #include "qkinect/QKinect.h"
 
 #define KINECT_PRECISION  1280

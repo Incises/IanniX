@@ -31,7 +31,7 @@ QHash<MessagesType, NetworkInterface*>  MessageManager::interfaces;
 QHash<QString, UiString>                MessageManager::aliases;
 MessageDispatcher*                      MessageManager::dispatcher        = 0;
 MessageManagerLog*                      MessageManager::messageManagerLog = 0;
-QScriptEngine*                          MessageManager::scriptEngine      = 0;
+QJSEngine*                             MessageManager::scriptEngine      = 0;
 void*                                   MessageManager::transportObject   = 0;
 void*                                   MessageManager::syncObject        = 0;
 quint16 MessageManager::transportNbTriggers = 0;
@@ -39,7 +39,7 @@ quint16 MessageManager::transportNbCursors  = 0;
 quint16 MessageManager::transportNbCurves   = 0;
 quint16 MessageManager::transportNbGroups   = 0;
 
-void MessageManager::setInterfaces(MessageDispatcher *_dispatcher, QScriptEngine *_scriptEngine, QLayout *logLayout, QLayout *logMiniLayout) {
+void MessageManager::setInterfaces(MessageDispatcher *_dispatcher, QJSEngine *_scriptEngine, QLayout *logLayout, QLayout *logMiniLayout) {
     if(_dispatcher)
         dispatcher   = _dispatcher;
     if(_scriptEngine)

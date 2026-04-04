@@ -24,8 +24,8 @@
 #ifndef NXLINE_H
 #define NXLINE_H
 
-#include <QtCore/qmath.h>
-#include <qnumeric.h>
+#include <QtMath>
+#include <QtNumeric>
 #include "nxpoint.h"
 
 class NxLine {

@@ -38,30 +38,19 @@ set(QT_VERSION "5" CACHE STRING "Qt major version to build against (5 or 6)")
 set_property(CACHE QT_VERSION PROPERTY STRINGS 5 6)
 
 if(QT_VERSION STREQUAL "6")
-    # --- Qt6 stub ---
-    # Qt6 removed the QtScript module.  Full Qt6 support requires migrating
-    # QScriptEngine usage to QJSEngine (from Qt6::Qml).  Until that work is
-    # done this path will fail at link time for any code that touches
-    # QScriptEngine.  It is provided so that the rest of the build
-    # infrastructure can be validated against Qt6.
-    message(WARNING
-        "Qt6 support is experimental. QScriptEngine has been removed in Qt6; "
-        "the build will fail until the QScript->QJSEngine migration is complete."
-    )
-    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Xml OpenGL SerialPort WebSockets)
-    find_package(Qt6 QUIET COMPONENTS Qml)
+    # --- Qt6 ---
+    # The scripting runtime now uses QJSEngine from QtQml.
+    message(WARNING "Qt6 support remains experimental while the broader migration is still in progress.")
+    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Qml Xml OpenGL OpenGLWidgets SerialPort WebSockets)
     add_compile_definitions(QT6)
     set(QT_LIBS
-        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Xml Qt6::OpenGL Qt6::SerialPort Qt6::WebSockets
+        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Qml Qt6::Xml Qt6::OpenGL Qt6::OpenGLWidgets Qt6::SerialPort Qt6::WebSockets
     )
-    if(Qt6Qml_FOUND)
-        list(APPEND QT_LIBS Qt6::Qml)
-    endif()
 else()
     # --- Qt5 (default, fully supported) ---
-    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network Script Xml OpenGL SerialPort WebSockets)
+    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network Qml Xml OpenGL SerialPort WebSockets)
     set(QT_LIBS
-        Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::Script Qt5::Xml Qt5::OpenGL Qt5::SerialPort Qt5::WebSockets
+        Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::Qml Qt5::Xml Qt5::OpenGL Qt5::SerialPort Qt5::WebSockets
     )
 endif()
 

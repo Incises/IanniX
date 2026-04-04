@@ -22,9 +22,9 @@
 */
 
 #include "nxpoint.h"
-#include <QtCore/qdebug.h>
-#include <QtCore/qvariant.h>
-#include <QtCore/qmath.h>
+#include <QDebug>
+#include <QVariant>
+#include <QtMath>
 
 qreal NxPoint::length() const {
     return qSqrt(xp * xp + yp * yp + zp * zp);

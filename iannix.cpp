@@ -133,7 +133,7 @@ IanniX::IanniX(const QString &_projectToLoad, QObject *parent) :
     inspector->addInterfaces();
 
     //Message script engine
-    QScriptValue messageScript = messageScriptEngine.globalObject();
+    QJSValue messageScript = messageScriptEngine.globalObject();
     messageScript = messageScriptEngine.evaluate(NxDocument::loadLibrary());
 
     //Special objects

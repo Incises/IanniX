@@ -7,5 +7,6 @@
 *.swp
 Thumbs.db
 build/
+build-*/
 # Qt Designer generated UI headers
 ui_*.h

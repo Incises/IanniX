@@ -33,7 +33,7 @@
 #include <QHashIterator>
 #include <QTimer>
 #include <QTreeWidgetItem>
-#include <QtCore/qmath.h>
+#include <QtMath>
 #include "iannix_spec.h"
 #include "iannix_cmd.h"
 #include "misc/application.h"

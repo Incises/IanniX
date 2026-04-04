@@ -33,7 +33,7 @@ Message::Message() {
     isTransportMessage = false;
 }
 
-void Message::setUrl(QString url, QScriptEngine *_messageScriptEngine, const QHash<QString,UiString> &aliases) {
+void Message::setUrl(QString url, QJSEngine *_messageScriptEngine, const QHash<QString,UiString> &aliases) {
     QHashIterator<QString,UiString> aliasIterator(aliases);
     while (aliasIterator.hasNext()) {
         aliasIterator.next();
@@ -41,7 +41,7 @@ void Message::setUrl(QString url, QScriptEngine *_messageScriptEngine, const QHa
     }
     setUrl(QUrl(url, QUrl::TolerantMode), _messageScriptEngine);
 }
-void Message::setUrl(const QUrl & url, QScriptEngine *_messageScriptEngine) {
+void Message::setUrl(const QUrl & url, QJSEngine *_messageScriptEngine) {
     messageScriptEngine = _messageScriptEngine;
     if(messageScriptEngine)
         messageScriptValue = messageScriptEngine->globalObject();
@@ -317,7 +317,7 @@ bool Message::parse(const QVector<QByteArray> & patternItems, const MessageManag
                         messageScriptValue.setProperty("global_time_verbose", Transport::getTimeLocalStr());
                 }
 
-                messageScriptResult = messageScriptEngine->evaluate(patternArgument);
+                messageScriptResult = messageScriptEngine->evaluate(QString::fromUtf8(patternArgument));
                 if(messageScriptResult.isError())
                     addString("**error**", patternArgument, patternIndex);
                 else if(messageScriptResult.isString()) {

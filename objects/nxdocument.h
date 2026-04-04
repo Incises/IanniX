@@ -25,7 +25,8 @@
 #define NXDOCUMENT_H
 
 #include <QObject>
-#include <QScriptEngine>
+#include <QJSEngine>
+#include <QJSValue>
 #include <QFile>
 #include <QFileInfo>
 #include <QInputDialog>
@@ -77,7 +78,7 @@ public:
     void updateCode(bool fromFile, bool raiseWindow);
     const QString getContent(bool fromFile);
     void remplaceInFunction(QString *content, const QString &delimiter, const QString &data);
-    QScriptValue scriptEvaluate(const QString &script, bool _createNewObjectIfExists);
+    QJSValue scriptEvaluate(const QString &script, bool _createNewObjectIfExists);
 
 public:
     QMap<QString, NxGroup*> groups;
@@ -124,30 +125,19 @@ public:
 
     //SCRIPT
 public:
-    QScriptEngine scriptEngine;
+    QJSEngine scriptEngine;
 protected:
     ExtScriptVariableAsk *variable;
-    QScriptValue script;
-    QScriptValue scriptOnIncomingMessage, scriptMakeWithScript, scriptAlterateWithScript, scriptMadeThroughGUI, scriptMadeThroughInterfaces, scriptAskUserForParameters;
+    QJSValue script;
+    QJSValue scriptOnIncomingMessage, scriptMakeWithScript, scriptAlterateWithScript, scriptMadeThroughGUI, scriptMadeThroughInterfaces, scriptAskUserForParameters;
     NxPoint mousePos;
     QString scriptContent;
 
 public:
     void open(bool configure);
+    QString incomingMessage(const MessageIncomming &source, bool needOutput = false, bool needToScript = true);
     inline void setMousePos(const NxPoint & _pos) {
         mousePos = _pos;
-    }
-
-    inline QString incomingMessage(const MessageIncomming &source, bool needOutput = false, bool = true) {
-        if(scriptOnIncomingMessage.isValid()) {
-            QString argumentsStr;
-            foreach(const QString &argument, source.arguments)
-                argumentsStr += "\"" + argument + "\",";
-            argumentsStr.chop(1);
-            if(needOutput)  return scriptOnIncomingMessage.call(QScriptValue(), QScriptValueList() << source.protocol << source.host << source.port.toString() << source.destination << scriptEngine.evaluate(QString("[%5]").arg(argumentsStr))).toString();
-            else            scriptOnIncomingMessage.call(QScriptValue(), QScriptValueList() << source.protocol << source.host << source.port.toString() << source.destination << scriptEngine.evaluate(QString("[%5]").arg(argumentsStr)));
-        }
-        return QString();
     }
 
     inline const QFileInfo getScriptFile() const {
@@ -157,6 +147,8 @@ public:
 
 public:
     bool createNewObjectIfExists;
+private:
+    QJSValue createScriptArgumentsArray(const QStringList &arguments);
 public slots:
     void ask(const QString & group, const QString & prompt, const QString & value, const QString & def)     {   return variable->ask(group, prompt, value, def);                                        }
     void meta(const QString & meta)                                                                         {   return variable->meta(meta);                                                            }

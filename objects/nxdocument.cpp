@@ -23,6 +23,38 @@
 
 #include "nxdocument.h"
 
+namespace {
+QStringList scriptErrorDetails(const QJSValue &errorValue) {
+    QStringList errors;
+    if(errorValue.isError()) {
+        const QString stack = errorValue.property("stack").toString().trimmed();
+        if(!stack.isEmpty())
+            errors = stack.split('\n', Qt::SkipEmptyParts);
+
+        const QString message = errorValue.property("message").toString().trimmed();
+        if(!message.isEmpty() && !errors.contains(message))
+            errors << message;
+    }
+    return errors;
+}
+
+int scriptErrorLine(const QJSValue &errorValue) {
+    if(errorValue.isError()) {
+        bool ok = false;
+        const int lineNumber = errorValue.property("lineNumber").toVariant().toInt(&ok);
+        if(ok)
+            return lineNumber;
+    }
+    return -1;
+}
+
+QJSValue callScriptFunction(QJSValue function, const QJSValueList &arguments = QJSValueList()) {
+    if(function.isCallable())
+        return function.call(arguments);
+    return QJSValue();
+}
+}
+
 NxDocument::NxDocument(ApplicationCurrent *parent, UiFileItem *_fileItem) :
     QObject(parent) {
     fileItem = _fileItem;
@@ -128,12 +160,12 @@ void NxDocument::open(bool configure) {
         Application::current->getMainWindow()->setWindowTitle(tr("IanniX") + QString(" / %1").arg(getScriptFile().baseName()));
 
     //Open the script
-    QScriptValue scriptFunctions = scriptEngine.newQObject(this);
+    QJSValue scriptFunctions = scriptEngine.newQObject(this);
     script = scriptEngine.globalObject();
 
     //Map specials features/keywords/functions
-    script.setProperty("mouseX", mousePos.x());
-    script.setProperty("mouseY", mousePos.y());
+    script.setProperty("mouseX", QJSValue(mousePos.x()));
+    script.setProperty("mouseY", QJSValue(mousePos.y()));
     script.setProperty("iannix", scriptFunctions);
     script.setProperty("nx",     scriptFunctions);
 
@@ -153,12 +185,12 @@ void NxDocument::open(bool configure) {
 
         //Load
         if(getScriptFile().suffix().toLower() == "nxscore") {
-            QStringList paste = scriptContent.split(COMMAND_END, QString::SkipEmptyParts);
+            QStringList paste = scriptContent.split(COMMAND_END, Qt::SkipEmptyParts);
             foreach(const QString & command, paste)
                 Application::current->execute(command, ExecuteSourceGui);
         }
         else {
-            QScriptValue scriptReturn = scriptEvaluate(scriptContent, false);
+            QJSValue scriptReturn = scriptEvaluate(scriptContent, false);
 
             //Extract function
             if(getScriptFile().suffix().toLower() == "iannix") {
@@ -177,16 +209,14 @@ void NxDocument::open(bool configure) {
 
 
             //Extract errors
-            QStringList errors = scriptEngine.uncaughtExceptionBacktrace();
-            if(scriptReturn.isError())
-                errors << scriptReturn.property("message").toString();
-            if(errors.count())  Transport::editor->scriptError(errors, scriptEngine.uncaughtExceptionLineNumber());
+            QStringList errors = scriptErrorDetails(scriptReturn);
+            if(errors.count())  Transport::editor->scriptError(errors, scriptErrorLine(scriptReturn));
             else                Transport::editor->scriptError(QStringList(), -1);
 
 
             //Call the "askUserForParameters()" function
             if(configure) {
-                scriptAskUserForParameters.call(QScriptValue(), QScriptValueList());
+                callScriptFunction(scriptAskUserForParameters);
                 Application::current->pushSnapshot();
             }
 
@@ -194,19 +224,19 @@ void NxDocument::open(bool configure) {
             QList<ExtScriptVariable*> variables = variable->ask();
             if(variable->result()) {
                 foreach(const ExtScriptVariable *variable, variables) {
-                    if(variable->isDefFloat())  script.setProperty(variable->getValue(), variable->getDefFloat());
-                    else                        script.setProperty(variable->getValue(), variable->getDefStr());
+                    if(variable->isDefFloat())  script.setProperty(variable->getValue(), QJSValue(variable->getDefFloat()));
+                    else                        script.setProperty(variable->getValue(), QJSValue(variable->getDefStr()));
                 }
 
                 //Call the functions
                 source = ExecuteSourceScript;
-                scriptMakeWithScript       .call(QScriptValue(), QScriptValueList());
+                callScriptFunction(scriptMakeWithScript);
                 source = ExecuteSourceGui;
-                scriptMadeThroughGUI       .call(QScriptValue(), QScriptValueList());
+                callScriptFunction(scriptMadeThroughGUI);
                 source = ExecuteSourceNetwork;
-                scriptMadeThroughInterfaces.call(QScriptValue(), QScriptValueList());
+                callScriptFunction(scriptMadeThroughInterfaces);
                 source = ExecuteSourceScript;
-                scriptAlterateWithScript   .call(QScriptValue(), QScriptValueList());
+                callScriptFunction(scriptAlterateWithScript);
 
                 isLoaded = true;
             }
@@ -285,9 +315,31 @@ const QString NxDocument::loadLibrary() {
     return scriptContent;
 }
 
-QScriptValue NxDocument::scriptEvaluate(const QString &scriptContent, bool _createNewObjectIfExists) {
+QJSValue NxDocument::scriptEvaluate(const QString &scriptContent, bool _createNewObjectIfExists) {
     createNewObjectIfExists = _createNewObjectIfExists;
     return scriptEngine.evaluate(scriptContent + loadLibrary());
+}
+
+QJSValue NxDocument::createScriptArgumentsArray(const QStringList &arguments) {
+    QJSValue values = scriptEngine.newArray(arguments.count());
+    for(quint32 argumentIndex = 0 ; argumentIndex < (quint32)arguments.count() ; argumentIndex++)
+        values.setProperty(argumentIndex, QJSValue(arguments.at(argumentIndex)));
+    return values;
+}
+
+QString NxDocument::incomingMessage(const MessageIncomming &source, bool needOutput, bool) {
+    if(scriptOnIncomingMessage.isCallable()) {
+        QJSValueList arguments;
+        arguments << QJSValue(source.protocol)
+                  << QJSValue(source.host)
+                  << QJSValue(source.port.toString())
+                  << QJSValue(source.destination)
+                  << createScriptArgumentsArray(source.arguments);
+        const QJSValue result = scriptOnIncomingMessage.call(arguments);
+        if(needOutput)
+            return result.toString();
+    }
+    return QString();
 }
 
 void NxDocument::askFileOpen() {

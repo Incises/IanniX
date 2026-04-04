@@ -139,7 +139,7 @@ public:
 private:
     Message message;
     QHash<QByteArray, Message> messagesCache;
-    QScriptEngine messageScriptEngine;
+    QJSEngine messageScriptEngine;
 public slots:
     const QVariant execute(const MessageIncomming & command, bool createNewObjectIfExists = false, bool needOutput = false);
     const QVariant execute(const QString & command, ExecuteSource source, bool createNewObjectIfExists = false, bool needOutput = false);

@@ -120,7 +120,7 @@ public:
 /*
 class MessageParser {
 public:
-    virtual void setUrl(const QUrl & url, QScriptEngine *_messageScriptEngine) = 0;
+    virtual void setUrl(const QUrl & url, QJSEngine *_messageScriptEngine) = 0;
     virtual bool parse(const QVector<QByteArray> & patternItems, const MessageManagerDestination &destination) = 0;
 };
 */

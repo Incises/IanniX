@@ -6,7 +6,7 @@
 #include <QImage>
 #include <QTextLayout>
 #include <QStaticText>
-#include <qmath.h>
+#include <QtMath>
 #include <QDateTime>
 #include <QUrl>
 #include <QFile>
@@ -231,35 +231,23 @@ public:
     qreal unselectedBorderWidth, selectedBorderWidth;
 
 public:
-    explicit OpenGlColors() {   }
-    OpenGlColors(const OpenGlColor &globalColor) {
-        OpenGlColors();
-        setColor(globalColor);
-        selectedBorderWidth = unselectedBorderWidth = 0;
-    }
-    OpenGlColors(const QColor &globalColor) {
-        OpenGlColors();
-        selectedBorderWidth = unselectedBorderWidth = 0;
+    explicit OpenGlColors() { selectedBorderWidth = unselectedBorderWidth = 0; }
+    OpenGlColors(const OpenGlColor &globalColor) : OpenGlColors() {
         setColor(globalColor);
     }
-    OpenGlColors(const OpenGlColor &_unselected, const OpenGlColor &_selected) {
-        OpenGlColors();
-        selectedBorderWidth = unselectedBorderWidth = 0;
+    OpenGlColors(const QColor &globalColor) : OpenGlColors() {
+        setColor(globalColor);
+    }
+    OpenGlColors(const OpenGlColor &_unselected, const OpenGlColor &_selected) : OpenGlColors() {
         setColor(_unselected, _selected);
     }
-    OpenGlColors(const QColor &_unselected, const OpenGlColor &_selected) {
-        OpenGlColors();
-        selectedBorderWidth = unselectedBorderWidth = 0;
+    OpenGlColors(const QColor &_unselected, const OpenGlColor &_selected) : OpenGlColors() {
         setColor(_unselected, _selected);
     }
-    OpenGlColors(const OpenGlColor &_unselected, const QColor &_selected) {
-        OpenGlColors();
-        selectedBorderWidth = unselectedBorderWidth = 0;
+    OpenGlColors(const OpenGlColor &_unselected, const QColor &_selected) : OpenGlColors() {
         setColor(_unselected, _selected);
     }
-    OpenGlColors(const QColor &_unselected, const QColor &_selected) {
-        OpenGlColors();
-        selectedBorderWidth = unselectedBorderWidth = 0;
+    OpenGlColors(const QColor &_unselected, const QColor &_selected) : OpenGlColors() {
         setColor(_unselected, _selected);
     }
 

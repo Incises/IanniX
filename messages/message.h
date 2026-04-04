@@ -24,8 +24,9 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#include <qmath.h>
-#include <QScriptEngine>
+#include <QtMath>
+#include <QJSEngine>
+#include <QJSValue>
 #include <QUdpSocket>
 #include <QTcpSocket>
 #include <QStringList>
@@ -41,21 +42,21 @@ private:
     QByteArray      asciiMessage, asciiMessageXml;
 private:
     bool            hasAdd, isTransportMessage;
-    QScriptValue    messageScriptValue, messageScriptResult;
+    QJSValue        messageScriptValue, messageScriptResult;
 private:
     QHostAddress    host;
     quint16         port;
     MessagesType    type;
     QList<qreal>    midiValues;
-    QScriptEngine  *messageScriptEngine;
+    QJSEngine      *messageScriptEngine;
 public:
     QList<QVariant> verboseValues;
 
 public:
     Message();
 public:
-    void setUrl(QString url, QScriptEngine *_messageScriptEngine, const QHash<QString, UiString> &aliases);
-    void setUrl(const QUrl & url, QScriptEngine *_messageScriptEngine = 0);
+    void setUrl(QString url, QJSEngine *_messageScriptEngine, const QHash<QString, UiString> &aliases);
+    void setUrl(const QUrl & url, QJSEngine *_messageScriptEngine = 0);
     bool parse(const QVector<QByteArray> & patternItems, const MessageManagerDestination &destination);
     
 private:

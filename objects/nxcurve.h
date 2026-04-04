@@ -24,8 +24,6 @@
 #ifndef NXCURVE_H
 #define NXCURVE_H
 
-#include <QScriptEngine>
-#include <QScriptValue>
 #include <QVarLengthArray>
 #include <QBitmap>
 #include <QPainterPath>

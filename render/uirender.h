@@ -31,7 +31,7 @@
 #include <QTime>
 #include <QWheelEvent>
 #include <QGesture>
-#include <QtCore/qmath.h>
+#include <QtMath>
 #include <QDir>
 #include <QClipboard>
 #include "interfaces/interfacesyphon.h"

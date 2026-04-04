@@ -1,14 +1,19 @@
 {
     "configurations": [
         {
-            "name": "Linux GCC13 Qt 5.15",
+            "name": "Ubuntu 24 GCC13 Qt 5.15",
             "includePath": [
                 "${workspaceFolder}/**",
                 "/usr/include/x86_64-linux-gnu/qt5",
                 "/usr/include/x86_64-linux-gnu/qt5/QtCore",
                 "/usr/include/x86_64-linux-gnu/qt5/QtGui",
                 "/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
-                "/usr/include/x86_64-linux-gnu/qt5/QtWidgets"
+                "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+                "/usr/include/x86_64-linux-gnu/qt5/QtXml",
+                "/usr/include/x86_64-linux-gnu/qt5/QtOpenGL",
+                "/usr/include/x86_64-linux-gnu/qt5/QtSerialPort",
+                "/usr/include/x86_64-linux-gnu/qt5/QtWebSockets",
+                "/usr/include/x86_64-linux-gnu/qt5/QtQml"
             ],
             "defines": [
                 "QT5"
@@ -17,6 +22,62 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
+            "name": "openSUSE Tumbleweed GCC Qt 5.15",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include/qt5",
+                "/usr/include/qt5/QtCore",
+                "/usr/include/qt5/QtGui",
+                "/usr/include/qt5/QtNetwork",
+                "/usr/include/qt5/QtWidgets",
+                "/usr/include/qt5/QtXml",
+                "/usr/include/qt5/QtOpenGL",
+                "/usr/include/qt5/QtSerialPort",
+                "/usr/include/qt5/QtWebSockets",
+                "/usr/include/qt5/QtQml"
+            ],
+            "defines": [
+                "QT5",
+                "__LINUX_ALSA__",
+                "__linux__",
+                "AVOID_TIMESTAMPING",
+                "IANNIX_64",
+                "IANNIX_32"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
+            "name": "openSUSE Tumbleweed Clang 21 Qt 5.15",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include/qt5",
+                "/usr/include/qt5/QtCore",
+                "/usr/include/qt5/QtGui",
+                "/usr/include/qt5/QtNetwork",
+                "/usr/include/qt5/QtWidgets",
+                "/usr/include/qt5/QtXml",
+                "/usr/include/qt5/QtOpenGL",
+                "/usr/include/qt5/QtSerialPort",
+                "/usr/include/qt5/QtWebSockets",
+                "/usr/include/qt5/QtQml"
+            ],
+            "defines": [
+                "QT5",
+                "__LINUX_ALSA__",
+                "__linux__",
+                "AVOID_TIMESTAMPING",
+                "IANNIX_64",
+                "IANNIX_32"
+            ],
+            "compilerPath": "/usr/bin/clang++-21",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
         }
     ],  
     "version": 4
