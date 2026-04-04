@@ -31,7 +31,8 @@ sudo zypper install \
     libqt5-qtserialport-devel \
     libqt5-qtwebsockets-devel \
     libqt5-qtx11extras-devel \
-    alsa-devel
+    muparser-devel \
+    rtmidi-devel
 ```
 
 **Configure and build**
@@ -67,7 +68,8 @@ sudo apt install \
     qtdeclarative5-dev \
     libqt5serialport5-dev \
     libqt5websockets5-dev \
-    libasound2-dev
+    libmuparser-dev \
+    librtmidi-dev
 ```
 
 **Configure and build**
@@ -145,31 +147,18 @@ cmake -B build -S . -DUSE_KINECT=ON
 
 **Dependency notes**
 
-- `muParser` is vendored in this repository under `geometry/qmuparser`, so no
-  separate Windows package is required.
-- `RtMidi` is also vendored under `interfaces/qrtmidi`; on Windows it uses the
-  native Multimedia backend and links against system libraries such as
-  `winmm`, `setupapi`, `advapi32`, `user32`, and `opengl32`.
-- The main external dependency on Windows is therefore Qt itself, plus the
-  selected compiler toolchain.
-- Optional features are less turnkey on Windows today:
-  `USE_FFMPEG=ON` currently relies on `pkg-config`, which is set up for Linux-
-  style package discovery and is not documented for Windows in this project.
-  `USE_KINECT` is currently gated to Unix builds, and `USE_WACOM` is macOS-only.
-- If we later want to unvendor third-party libraries on Windows, `vcpkg` is the
-  most sensible direction. It provides a consistent way to install and version
-  C/C++ dependencies on Windows and would be a better fit than expecting users
-  to locate ad hoc development packages manually. This is currently a project
-  recommendation only; the CMake build does not yet resolve `muParser`,
-  `RtMidi`, or FFmpeg through `vcpkg`.
+- `muParser` and `RtMidi` are no longer vendored — they must be provided as
+  system packages.  On Windows, use [vcpkg](https://vcpkg.io) (see below).
+- On Windows, RtMidi uses the native Multimedia backend and links against
+  `winmm`, `setupapi`, `advapi32`, `user32`, and `opengl32` automatically.
+- Optional features: `USE_FFMPEG=ON` requires FFmpeg dev libraries (also
+  available via vcpkg).  `USE_KINECT` is gated to Unix builds; `USE_WACOM` is
+  macOS-only.
 
-**vcpkg (recommended for optional features and future system packages)**
+**vcpkg (required for muParser, RtMidi, and optional FFmpeg)**
 
 Windows has no system package manager, so [vcpkg](https://vcpkg.io) fills that
-role.  The vendored copies of muParser and RtMidi mean vcpkg is not required for
-a basic build today, but it becomes necessary once those libraries are replaced
-with system packages (see [MIGRATION.md §20](MIGRATION.md#20-vendored-libraries)),
-and it is the cleanest way to enable `USE_FFMPEG` on Windows now.
+role.
 
 Install vcpkg once:
 
@@ -178,26 +167,25 @@ git clone https://github.com/microsoft/vcpkg %USERPROFILE%\vcpkg
 %USERPROFILE%\vcpkg\bootstrap-vcpkg.bat
 ```
 
-Install the packages you need:
+Install the required and optional packages:
 
 ```bat
+:: Required
+%USERPROFILE%\vcpkg\vcpkg install muparser rtmidi --triplet x64-windows
+
 :: Core Qt dependencies (alternative to the Qt installer)
 %USERPROFILE%\vcpkg\vcpkg install qt5-base qt5-declarative qt5-serialport qt5-websockets --triplet x64-windows
 
 :: Optional: FFmpeg (enables USE_FFMPEG=ON)
 %USERPROFILE%\vcpkg\vcpkg install ffmpeg --triplet x64-windows
-
-:: Future: system muParser and RtMidi (once vendored copies are removed)
-:: %USERPROFILE%\vcpkg\vcpkg install muparser rtmidi --triplet x64-windows
 ```
 
-Pass the vcpkg toolchain file to CMake instead of `CMAKE_PREFIX_PATH`:
+Pass the vcpkg toolchain file to CMake:
 
 ```bat
 cmake -B build -S . ^
     -DCMAKE_TOOLCHAIN_FILE=%USERPROFILE%\vcpkg\scripts\buildsystems\vcpkg.cmake ^
-    -DVCPKG_TARGET_TRIPLET=x64-windows ^
-    -DUSE_FFMPEG=ON
+    -DVCPKG_TARGET_TRIPLET=x64-windows
 cmake --build build --config Release
 ```
 

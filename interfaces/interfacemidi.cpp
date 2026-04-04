@@ -60,7 +60,7 @@ InterfaceMidi::InterfaceMidi(QWidget *parent) :
         if(ui->aliasPort->findText(portOutName) < 0)
             ui->aliasPort->addItem(portOutName);
 #endif
-    } catch (RtError& err) {}
+    } catch (RtMidiError& err) {}
     if(portIn.value(getPortName(portInName))) {
         portIn.value(getPortName(portInName))->setCallback(&midiCallback, this);
         portIn.value(getPortName(portInName))->ignoreTypes(true, false, true);
@@ -103,7 +103,7 @@ void InterfaceMidi::timerEvent(QTimerEvent*) {
                 portIn.value(getPortName(portName))->ignoreTypes(true, true, true);
             }
         }
-        catch(RtError &err) {}
+        catch(RtMidiError &err) {}
     }
     delete portListIn;
 
@@ -122,7 +122,7 @@ void InterfaceMidi::timerEvent(QTimerEvent*) {
                 portOut.value(getPortName(portName))->openPort(portListOutIndex);
             }
         }
-        catch(RtError &err) {}
+        catch(RtMidiError &err) {}
     }
     delete portListOut;
 
@@ -194,7 +194,7 @@ void InterfaceMidi::sendNote(const QString & portname, quint8 channel, qreal _no
     if((message.size() > 0) && (portOut.contains(portname))) {
         try {
             portOut.value(portname)->sendMessage(&message);
-        } catch (RtError& err) { }
+        } catch (RtMidiError& err) { }
     }
 }
 void InterfaceMidi::sendCC(const QString & portname, quint8 channel, quint16 controller, qreal _value) {
@@ -212,7 +212,7 @@ void InterfaceMidi::sendCC(const QString & portname, quint8 channel, quint16 con
     if((message.size() > 0) && (portOut.contains(portname))) {
         try {
             portOut.value(portname)->sendMessage(&message);
-        } catch (RtError& err) { }
+        } catch (RtMidiError& err) { }
     }
 }
 void InterfaceMidi::sendPGM(const QString & portname, quint8 channel, quint16 program) {
@@ -226,7 +226,7 @@ void InterfaceMidi::sendPGM(const QString & portname, quint8 channel, quint16 pr
     if((message.size() > 0) && (portOut.contains(portname))) {
         try {
             portOut.value(portname)->sendMessage(&message);
-        } catch (RtError& err) {  }
+        } catch (RtMidiError& err) {  }
     }
 }
 void InterfaceMidi::sendBend(const QString & portname, quint8 channel, qreal _bendvalue) {
@@ -245,7 +245,7 @@ void InterfaceMidi::sendBend(const QString & portname, quint8 channel, qreal _be
     if((message.size() > 0) && (portOut.contains(portname))) {
         try {
             portOut.value(portname)->sendMessage(&message);
-        } catch (RtError& err) { }
+        } catch (RtMidiError& err) { }
     }
 }
 void InterfaceMidi::networkSynchro(bool start) {
@@ -266,7 +266,7 @@ void InterfaceMidi::sendSPPStart() {
         foreach(RtMidiOut *port, portOut) {
             try {
                 port->sendMessage(&message);
-            } catch (RtError& err) {
+            } catch (RtMidiError& err) {
             }
         }
     }
@@ -278,7 +278,7 @@ void InterfaceMidi::sendSPPStop() {
         foreach(RtMidiOut *port, portOut) {
             try {
                 port->sendMessage(&message);
-            } catch (RtError& err) {
+            } catch (RtMidiError& err) {
             }
         }
     }
@@ -295,7 +295,7 @@ void InterfaceMidi::sendSPPTime(qreal time) {
         foreach(RtMidiOut *port, portOut) {
             try {
                 port->sendMessage(&message);
-            } catch (RtError& err) {
+            } catch (RtMidiError& err) {
             }
         }
     }

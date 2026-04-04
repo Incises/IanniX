@@ -307,25 +307,11 @@ Suggested order: render layer first (`uirender`, `abstractionsgl`), then objects
 
 ## 15. std::auto_ptr to std::unique_ptr
 
-**Status: TODO (vendored code only)**
+**Status: DONE**
 
-`std::auto_ptr` is removed in C++17.  All occurrences are in vendored libraries.
-
-### Files affected
-
-| File | Lines |
-|------|-------|
-| `geometry/qmuparser/muParserBase.h` | 291 |
-| `geometry/qmuparser/muParserToken.h` | 72 |
-| `geometry/qmuparser/muParserTokenReader.cpp` | 150 |
-| `geometry/qmuparser/muParserTest.cpp` | 1261 |
-| `interfaces/qrtmidi/RtMidi.cpp` | 2488, 3044–3045 |
-
-### Migration path
-
-Replace `std::auto_ptr<T>` with `std::unique_ptr<T>` and add `std::move()` at
-ownership-transfer points.  Alternatively, upgrade to a newer upstream release
-of muParser or RtMidi.
+The vendored muParser and RtMidi copies that contained all `std::auto_ptr` usage
+have been replaced with system packages.  No `std::auto_ptr` references remain
+in the project source tree.
 
 ---
 
@@ -425,21 +411,17 @@ Replaced with `QSerialPort` + `QSerialPortInfo` (`Qt5::SerialPort`).
 
 Replaced with `QWebSocket` + `QWebSocketServer` (`Qt5::WebSockets`).
 
-### qrtmidi (`interfaces/qrtmidi/`)
+### qrtmidi — DONE, removed
 
-- **Version:** RtMidi 2.0.1 (2012)
-- **Used by:** `interfaces/interfacemidi.h/.cpp`
-- **Contains:** `std::auto_ptr` (see [§15](#15-stdauto_ptr-to-stdunique_ptr))
-- **Replacement:** System RtMidi package (6.x) — same API family.
-- **Effort:** Low if API is compatible; verify breaking changes between 2.x and 6.x.
+Replaced with the system `RtMidi` package (6.0.0).  The only breaking API change
+between the vendored 2.0.1 and 6.x was the rename of `RtError` to `RtMidiError`;
+all call sites in `interfaces/interfacemidi.cpp` have been updated.  The
+`interfaces/qrtmidi/` directory has been deleted.
 
-### qmuparser (`geometry/qmuparser/`)
+### qmuparser — DONE, removed
 
-- **Version:** muParser 2.2.5 (2015)
-- **Used by:** `objects/nxcurve.h/.cpp` — core parametric curve evaluation
-- **Contains:** `std::auto_ptr` (see [§15](#15-stdauto_ptr-to-stdunique_ptr))
-- **Replacement:** Newer muParser from upstream, or alternative (exprtk, tinyexpr).
-- **Effort:** Low to upgrade in-place; high if switching library.
+Replaced with the system `muParser` package (2.3.5).  The `geometry/qmuparser/`
+directory has been deleted; `objects/nxcurve.h` now includes `<muParser.h>`.
 
 ### jsedit (`gui/qjsedit/`)
 
@@ -482,12 +464,12 @@ Replaced with `QWebSocket` + `QWebSocketServer` (`Qt5::WebSockets`).
 | 12 | QRegExp | Medium | **Yes** | ✅ DONE |
 | 13 | Qt4 branches | Medium | No | ✅ DONE |
 | 14 | OpenGL legacy | High | Partial | TODO |
-| 15 | std::auto_ptr | Low | Compiler err | TODO (vendored only) |
+| 15 | std::auto_ptr | Low | Compiler err | ✅ DONE |
 | 16 | register keyword | Low | Compiler err | TODO |
 | 17 | SIGNAL/SLOT macros | Low | No | TODO |
 | 18 | qSort | Low | **Yes** | TODO |
 | 19 | QVariant::Type | Low | No | TODO |
-| 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets removed |
+| 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets/qmuparser/qrtmidi removed; jsedit/artnet remain |
 
 ### Remaining Qt6 blockers
 

@@ -75,6 +75,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR)
 endif()
 
 # ---------------------------------------------------------------------------
+# System library dependencies (vendored copies removed)
+# ---------------------------------------------------------------------------
+find_package(muparser REQUIRED)
+find_package(RtMidi   REQUIRED)
+
+# ---------------------------------------------------------------------------
 # Optional features (disabled by default)
 # ---------------------------------------------------------------------------
 option(USE_FFMPEG  "Enable FFmpeg recording support (requires libav*)" OFF)
@@ -118,8 +124,6 @@ elseif(UNIX)
     endif()
 endif()
 
-# RtMidi debug diagnostics in Debug builds
-add_compile_definitions($<$<CONFIG:Debug>:__RTMIDI_DEBUG__>)
 
 # ---------------------------------------------------------------------------
 # Source file groups
@@ -170,22 +174,14 @@ set(RENDER_FORMS
     render/uirender.ui
 )
 
-# -- Geometry (includes vendored muParser) --
+# -- Geometry --
 set(GEOMETRY_HEADERS
     geometry/nxpoint.h geometry/nxrect.h geometry/nxsize.h
     geometry/nxline.h geometry/nxpolygon.h geometry/nxeasing.h
-    geometry/qmuparser/muParser.h geometry/qmuparser/muParserBase.h
-    geometry/qmuparser/muParserBytecode.h geometry/qmuparser/muParserCallback.h
-    geometry/qmuparser/muParserError.h geometry/qmuparser/muParserTokenReader.h
-    geometry/qmuparser/muParserDef.h geometry/qmuparser/muParserFixes.h
-    geometry/qmuparser/muParserStack.h geometry/qmuparser/muParserToken.h
 )
 set(GEOMETRY_SOURCES
     geometry/nxpoint.cpp geometry/nxrect.cpp geometry/nxsize.cpp
     geometry/nxline.cpp geometry/nxpolygon.cpp geometry/nxeasing.cpp
-    geometry/qmuparser/muParser.cpp geometry/qmuparser/muParserBase.cpp
-    geometry/qmuparser/muParserBytecode.cpp geometry/qmuparser/muParserCallback.cpp
-    geometry/qmuparser/muParserError.cpp geometry/qmuparser/muParserTokenReader.cpp
 )
 
 # -- Objects --
@@ -244,13 +240,6 @@ set(INTERFACES_FORMS
     interfaces/interfacedirect.ui interfaces/interfacesyphon.ui
 )
 
-# -- Vendored: RtMidi --
-set(RTMIDI_HEADERS
-    interfaces/qrtmidi/RtMidi.h interfaces/qrtmidi/RtError.h
-)
-set(RTMIDI_SOURCES
-    interfaces/qrtmidi/RtMidi.cpp
-)
 
 # -- AbstractionsGL --
 set(ABSTRACTIONS_HEADERS abstractionsgl.h)
@@ -373,7 +362,6 @@ set(ALL_SOURCES
     ${GUI_SOURCES}         ${GUI_HEADERS}
     ${ITEMS_SOURCES}       ${ITEMS_HEADERS}
     ${INTERFACES_SOURCES}  ${INTERFACES_HEADERS}
-    ${RTMIDI_SOURCES}      ${RTMIDI_HEADERS}
     ${ABSTRACTIONS_SOURCES} ${ABSTRACTIONS_HEADERS}
     ${ARTNET_SOURCES}      ${ARTNET_HEADERS}
     ${ZEROCONF_SOURCES}    ${ZEROCONF_HEADERS}
@@ -422,13 +410,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/transport
     ${CMAKE_CURRENT_SOURCE_DIR}/render
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/qmuparser
     ${CMAKE_CURRENT_SOURCE_DIR}/objects
     ${CMAKE_CURRENT_SOURCE_DIR}/gui
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/qjsedit
     ${CMAKE_CURRENT_SOURCE_DIR}/items
     ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
-    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/qrtmidi
     ${OPTIONAL_INCLUDES}
 )
 
@@ -442,7 +428,7 @@ endif()
 # ---------------------------------------------------------------------------
 # Link Qt
 # ---------------------------------------------------------------------------
-target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS} ${OPTIONAL_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS} muparser::muparser RtMidi::rtmidi ${OPTIONAL_LIBS})
 
 # ---------------------------------------------------------------------------
 # Platform-specific libraries
@@ -469,15 +455,6 @@ elseif(UNIX)
     # OpenGL
     find_package(OpenGL REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL)
-
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        # ALSA (required for RtMidi on Linux)
-        find_package(PkgConfig REQUIRED)
-        pkg_check_modules(ALSA REQUIRED alsa)
-        target_include_directories(${PROJECT_NAME} PRIVATE ${ALSA_INCLUDE_DIRS})
-        target_link_libraries(${PROJECT_NAME} PRIVATE ${ALSA_LIBRARIES})
-
-    endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -561,7 +538,4 @@ message(STATUS "  C++ std    : ${CMAKE_CXX_STANDARD}")
 message(STATUS "  FFmpeg     : ${USE_FFMPEG}")
 message(STATUS "  Kinect     : ${USE_KINECT}")
 message(STATUS "  Wacom      : ${USE_WACOM}")
-if(UNIX AND NOT APPLE)
-    message(STATUS "  ALSA       : ${ALSA_FOUND}")
-endif()
 message(STATUS "-----------------------------------------------")

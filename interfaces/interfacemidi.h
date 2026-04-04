@@ -29,7 +29,7 @@
 #include <QNetworkReply>
 #include <QDesktopServices>
 #include "misc/options.h"
-#include "qrtmidi/RtMidi.h"
+#include <rtmidi/RtMidi.h>
 #include "messages/messagemanager.h"
 
 #define MASK_CHANNEL      0x0f
