@@ -20,6 +20,7 @@
 */
 
 #include "uisplashscreen.h"
+#include <QGuiApplication>
 
 UiSplashScreen::UiSplashScreen(const QPixmap &_pixmap) :
     QFrame(0, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint) {
@@ -27,7 +28,7 @@ UiSplashScreen::UiSplashScreen(const QPixmap &_pixmap) :
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedSize(pixmap.size()/2);
 
-    QRect screen = QApplication::desktop()->screenGeometry();
+    QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.center() - rect().center());
 
     QFont textFont("Arial");

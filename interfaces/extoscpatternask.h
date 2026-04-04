@@ -24,7 +24,7 @@
 
 #include <QDesktopServices>
 #include <QDialog>
-#include <QDesktopWidget>
+#include <QScreen>
 #include "objects/nxobject.h"
 #include "interfaces/extoscpatterneditor.h"
 #include "messages/message.h"

@@ -24,7 +24,7 @@
 
 #include <QObject>
 #include <QTimer>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QNetworkAccessManager>

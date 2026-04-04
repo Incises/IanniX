@@ -26,7 +26,7 @@
 #include <QColor>
 #include <QFile>
 #include <QMimeData>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QWheelEvent>
 #include <QGesture>
 #include <QtMath>
@@ -76,7 +76,7 @@ public:
     QString defaultStatusTip, cursorStatusTip, curveStatusTip, triggerStatusTip;
 private:
     NxDocument *documentToRender;
-    QTime renderMeasure;
+    QElapsedTimer renderMeasure;
     UiRenderSelection selectionRect;
     NxObject *selectedHover;
     UiRenderSelection selection;

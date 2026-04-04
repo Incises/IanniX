@@ -45,7 +45,6 @@ private:
     bool wasInspectorVisible, wasTransportVisible, isFullScreen;
     QPoint previousPos;
     QSize previousSize;
-    QDesktopWidget *fullscreenDisplays;
     QList<QPushButton*> fullscreenButtons;
 
 public:

@@ -23,7 +23,7 @@
 #define TRANSPORT_H
 
 #include <QWidget>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QProcess>
 #include <QThread>
 #include <QCoreApplication>
@@ -82,7 +82,7 @@ public:
     static qreal perfOpenGLRefreshTime,    perfOpenGLCounterTime;
     static QString timeLocalStr;
     static qreal renderMeasureAbsoluteValOld;
-    static QTime renderMeasureAbsolute;
+    static QElapsedTimer renderMeasureAbsolute;
     static bool forceTimeLocal;
     static qreal perfCpu, perfMem;
     static UiBool timerOk;

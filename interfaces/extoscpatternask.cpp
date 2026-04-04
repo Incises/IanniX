@@ -21,6 +21,8 @@
 
 #include "extoscpatternask.h"
 #include "ui_extoscpatternask.h"
+#include <QGuiApplication>
+#include <QScreen>
 
 ExtOscPatternAsk::ExtOscPatternAsk(QWidget *parent, QList<NxObject *> *_objects) :
     QDialog(parent),
@@ -57,7 +59,7 @@ ExtOscPatternAsk::ExtOscPatternAsk(QWidget *parent, QList<NxObject *> *_objects)
     if(ui->tabs->count())
         ui->tabs->setCurrentIndex(0);
 
-    QRect screen = QApplication::desktop()->screenGeometry();
+    QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.center() - rect().center());
 }
 

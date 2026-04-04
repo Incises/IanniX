@@ -24,7 +24,7 @@
 
 #include <QMainWindow>
 #include <QFileInfo>
-#include <QDesktopWidget>
+#include <QScreen>
 #include <QMessageBox>
 #include <QFile>
 #include <QTextCursor>

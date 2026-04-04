@@ -21,13 +21,15 @@
 
 #include "uiabout.h"
 #include "ui_uiabout.h"
+#include <QGuiApplication>
+#include <QScreen>
 
 UiAbout::UiAbout(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::UiAbout) {
     ui->setupUi(this);
     ui->version->setText(tr("version") + " " + QCoreApplication::applicationVersion() + " " + tr("beta"));
-    QRect screen = QApplication::desktop()->screenGeometry();
+    QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.center() - rect().center());
 }
 

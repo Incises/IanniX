@@ -13,11 +13,11 @@ verified clean by grep against the current source tree.
 ## Table of Contents
 
 1. [QtScript to QJSEngine](#1-qtscript-to-qjsengine) ✅
-2. [QDesktopWidget to QScreen](#2-qdesktopwidget-to-qscreen)
+2. [QDesktopWidget to QScreen](#2-qdesktopwidget-to-qscreen) ✅
 3. [QString::SplitBehavior to Qt::SplitBehavior](#3-qstringsplitbehavior-to-qtsplitbehavior) ✅
 4. [QWheelEvent::delta to angleDelta](#4-qwheeleventdelta-to-angledelta) ✅
 5. [QMouseEvent::pos to position](#5-qmouseeventpos-to-position)
-6. [QTime as timer to QElapsedTimer](#6-qtime-as-timer-to-qelapsedtimer)
+6. [QTime as timer to QElapsedTimer](#6-qtime-as-timer-to-qelapsedtimer) ✅
 7. [qrand/qsrand to QRandomGenerator](#7-qrandqsrand-to-qrandomgenerator) ✅
 8. [QPainter deprecated hints](#8-qpainter-deprecated-hints)
 9. [QTextOption::setTabStop and setTabStopWidth](#9-qtextoptionsettabstop-and-settabstopwidth)
@@ -53,7 +53,7 @@ replaced with helpers that read `errorValue.property("stack")` and
 
 ## 2. QDesktopWidget to QScreen
 
-**Status: TODO — blocks Qt6**
+**Status: DONE**
 
 `QDesktopWidget` is removed in Qt6.
 
@@ -130,7 +130,7 @@ event->position().toPoint()  // position() returns QPointF (Qt 5.15+)
 
 ## 6. QTime as timer to QElapsedTimer
 
-**Status: TODO — blocks Qt6**
+**Status: DONE**
 
 Using `QTime` as a stopwatch (`start()` / `elapsed()`) is deprecated. `QTime`
 itself is not removed in Qt6, but this misuse triggers deprecation warnings.
@@ -451,11 +451,11 @@ directory has been deleted; `objects/nxcurve.h` now includes `<muParser.h>`.
 | # | Issue | Severity | Blocks Qt6? | Status |
 |---|-------|----------|-------------|--------|
 | 1 | QtScript → QJSEngine | Critical | **Yes** | ✅ DONE |
-| 2 | QDesktopWidget → QScreen | High | **Yes** | TODO |
+| 2 | QDesktopWidget → QScreen | High | **Yes** | ✅ DONE |
 | 3 | QString::SplitBehavior | Medium | No | ✅ DONE |
 | 4 | QWheelEvent::delta | Low | **Yes** | ✅ DONE |
 | 5 | QMouseEvent::pos | Low | **Yes** | TODO |
-| 6 | QTime → QElapsedTimer | Low | **Yes** | TODO |
+| 6 | QTime → QElapsedTimer | Low | **Yes** | ✅ DONE |
 | 7 | qrand/qsrand | Low | **Yes** | ✅ DONE |
 | 8 | QPainter hints | Low | No | TODO |
 | 9 | setTabStop/Width | Low | No | TODO |

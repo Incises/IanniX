@@ -21,6 +21,8 @@
 
 #include "uiview.h"
 #include "ui_uiview.h"
+#include <QGuiApplication>
+#include <QScreen>
 
 UiView::UiView(QWidget *parent) :
     QMainWindow(parent),
@@ -51,7 +53,7 @@ UiView::UiView(QWidget *parent) :
     ui->render->cursorStatusTip  = ui->actionAddFreeCursor->statusTip().remove(tr("\nPress ESC or click again on the toolbar button to stop edition."));
     ui->render->triggerStatusTip = ui->actionDrawTriggers ->statusTip().remove(tr("\nPress ESC or click again on the toolbar button to stop edition."));
 
-    QRect screen = QApplication::desktop()->screenGeometry();
+    QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.center() - rect().center());
 
     connect(ui->render, SIGNAL(editingMove(NxPoint,bool,bool)), SLOT(editingMove(NxPoint,bool,bool)));
@@ -142,8 +144,8 @@ UiView::UiView(QWidget *parent) :
     ui->renderPreview = 0;
     ui->renderPreview = new UiRenderPreview(ui->pagePerf, ui->render);
     ui->pagePerf->layout()->addWidget(ui->renderPreview);
-    fullscreenDisplays = QApplication::desktop();
-    connect(fullscreenDisplays, SIGNAL(screenCountChanged(int)), SLOT(fullscreenDisplaysCountChanged()));
+    connect(qApp, &QGuiApplication::screenAdded,   this, [this](QScreen*){ fullscreenDisplaysCountChanged(); });
+    connect(qApp, &QGuiApplication::screenRemoved, this, [this](QScreen*){ fullscreenDisplaysCountChanged(); });
     fullscreenDisplaysCountChanged();
     //delete ui->actionPerformance;
     ui->render->setFocus();
@@ -201,8 +203,10 @@ void UiView::fullscreenDisplaysCountChanged() {
         delete fullscreenButton;
     fullscreenButtons.clear();
 
-    for(quint8 fullscreenDisplayIndex = 0 ; fullscreenDisplayIndex < fullscreenDisplays->screenCount() ; fullscreenDisplayIndex++) {
-        QPushButton *fullscreenButton = new QPushButton(tr("DISPLAY %1 (%2 x %3)").arg(fullscreenDisplayIndex+1).arg(fullscreenDisplays->screenGeometry(fullscreenDisplayIndex).width()).arg(fullscreenDisplays->screenGeometry(fullscreenDisplayIndex).height()), ui->pagePerf);
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    for(quint8 fullscreenDisplayIndex = 0 ; fullscreenDisplayIndex < screens.size() ; fullscreenDisplayIndex++) {
+        const QRect geo = screens.at(fullscreenDisplayIndex)->geometry();
+        QPushButton *fullscreenButton = new QPushButton(tr("DISPLAY %1 (%2 x %3)").arg(fullscreenDisplayIndex+1).arg(geo.width()).arg(geo.height()), ui->pagePerf);
         fullscreenButton->setToolTip(tr("Moves the render window on this video output and switches to fullscreen"));
         ui->performanceLayout->addWidget(fullscreenButton);
         connect(fullscreenButton, SIGNAL(released()), SLOT(fullscreenDisplaysSelected()));
@@ -216,8 +220,9 @@ void UiView::fullscreenDisplaysSelected() {
 }
 
 void UiView::goToFullscreen() {
-    if(ui->render->parent())    goToFullscreen(fullscreenDisplays->screenNumber(pos()));
-    else                        goToFullscreen(fullscreenDisplays->screenNumber(ui->render->pos()));
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    if(ui->render->parent())    goToFullscreen(screens.indexOf(QGuiApplication::screenAt(pos())));
+    else                        goToFullscreen(screens.indexOf(QGuiApplication::screenAt(ui->render->pos())));
 }
 void UiView::goToFullscreen(quint8 screenIndex) {
     if(ui->render->parent()) {
@@ -262,7 +267,7 @@ void UiView::goToFullscreen(quint8 screenIndex) {
             previousPos  = ui->render->pos();
             //previousSize = ui->render->size();
 
-            ui->render->move(fullscreenDisplays->screenGeometry(screenIndex).topLeft());
+            ui->render->move(QGuiApplication::screens().at(screenIndex)->geometry().topLeft());
             ui->render->setWindowState(windowState() | Qt::WindowFullScreen);
             ui->render->setCursor(Qt::BlankCursor);
             isFullScreen = true;

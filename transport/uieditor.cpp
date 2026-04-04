@@ -21,6 +21,8 @@
 
 #include "uieditor.h"
 #include "ui_uieditor.h"
+#include <QGuiApplication>
+#include <QScreen>
 
 UiEditor::UiEditor(QWidget *parent) :
     QMainWindow(parent),
@@ -29,7 +31,7 @@ UiEditor::UiEditor(QWidget *parent) :
     toolbarButton = 0;
     firstLaunch = true;
 
-    QRect screen = QApplication::desktop()->screenGeometry();
+    QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.bottomRight().x() - rect().width(), 20);
 
     connect(ui->actionSave,        SIGNAL(triggered()), SLOT(save()));

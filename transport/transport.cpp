@@ -31,7 +31,7 @@ qreal     Transport::perfSchedulerCounterTime    = 0;
 qreal     Transport::perfOpenGLRefreshTime       = 0;
 qreal     Transport::perfOpenGLCounterTime       = 0;
 qreal     Transport::renderMeasureAbsoluteValOld = 0;
-QTime     Transport::renderMeasureAbsolute;
+QElapsedTimer Transport::renderMeasureAbsolute;
 bool      Transport::forceTimeLocal = false;
 qreal     Transport::perfCpu        = 0;
 qreal     Transport::perfMem        = 0;
