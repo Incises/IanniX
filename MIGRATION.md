@@ -21,7 +21,7 @@ verified clean by grep against the current source tree.
 7. [qrand/qsrand to QRandomGenerator](#7-qrandqsrand-to-qrandomgenerator) ✅
 8. [QPainter deprecated hints](#8-qpainter-deprecated-hints)
 9. [QTextOption::setTabStop and setTabStopWidth](#9-qtextoptionsettabstop-and-settabstopwidth)
-10. [QFontMetrics::width to horizontalAdvance](#10-qfontmetricswidth-to-horizontaladvance)
+10. [QFontMetrics::width to horizontalAdvance](#10-qfontmetricswidth-to-horizontaladvance) ✅
 11. [QTextCodec (removed in Qt6)](#11-qtextcodec-removed-in-qt6)
 12. [QRegExp to QRegularExpression](#12-qregexp-to-qregularexpression) ✅
 13. [Qt4 preprocessor branches](#13-qt4-preprocessor-branches) ✅
@@ -115,7 +115,6 @@ All `event->delta()` calls have been replaced with `event->angleDelta().y()`.
 |------|-------|
 | `render/uirender.cpp` | 640, 642, 744, 779, 781 |
 | `items/uitreeviewwidget.cpp` | 35 |
-| `gui/qjsedit/jsedit.cpp` | 480–481 |
 
 ### Migration path
 
@@ -222,22 +221,10 @@ editor->setTabStopDistance(width);
 
 ## 10. QFontMetrics::width to horizontalAdvance
 
-**Status: TODO**
+**Status: DONE**
 
-### Files affected
-
-| File | Lines |
-|------|-------|
-| `gui/qjsedit/jsedit.cpp` | 982, 986 |
-
-### Migration path
-
-```cpp
-// Before
-metrics.width(ch)
-// After (Qt 5.11+)
-metrics.horizontalAdvance(ch)
-```
+`gui/qjsedit/jsedit.cpp` (the only affected file) has been removed; its replacement
+`gui/codeeditor/codeeditor.cpp` uses `fontMetrics().horizontalAdvance()` throughout.
 
 ---
 
@@ -354,8 +341,7 @@ connect(obj, SIGNAL(valueChanged(int)), other, SLOT(update(int)));
 connect(obj, &ClassName::valueChanged, other, &OtherClass::update);
 ```
 
-Convert file by file.  The vendored libraries (`qjsedit`) are lower priority
-as they may be replaced entirely.
+Convert file by file.
 
 ---
 
@@ -423,13 +409,13 @@ all call sites in `interfaces/interfacemidi.cpp` have been updated.  The
 Replaced with the system `muParser` package (2.3.5).  The `geometry/qmuparser/`
 directory has been deleted; `objects/nxcurve.h` now includes `<muParser.h>`.
 
-### jsedit (`gui/qjsedit/`)
+### jsedit (`gui/qjsedit/`) — DONE, removed
 
-- **Version:** Ofi Labs X2 JSEdit (2010, Ariya Hidayat)
-- **Used by:** `transport/uieditor.cpp`
-- **Contains:** `QFontMetrics::width` (§10), `QWheelEvent::delta` (§4 — fixed), `QMouseEvent::pos` (§5)
-- **Replacement:** `QSyntaxHighlighter` + `QPlainTextEdit`, or KSyntaxHighlighting.
-- **Effort:** Low–medium.
+Replaced by `gui/codeeditor/CodeEditor`, a `QPlainTextEdit` subclass backed by the system
+`KF5SyntaxHighlighting` library (openSUSE package: `syntax-highlighting-devel`).
+The widget is language-agnostic: call `setLanguage("JavaScript")` (or any other
+KSyntaxHighlighting definition name) at construction time.
+`QFontMetrics::width` (§10) and `QMouseEvent::pos` (§5) issues from jsedit are gone.
 
 ### artnet (`interfaces/artnet/`)
 
@@ -459,7 +445,7 @@ directory has been deleted; `objects/nxcurve.h` now includes `<muParser.h>`.
 | 7 | qrand/qsrand | Low | **Yes** | ✅ DONE |
 | 8 | QPainter hints | Low | No | TODO |
 | 9 | setTabStop/Width | Low | No | TODO |
-| 10 | QFontMetrics::width | Low | No | TODO |
+| 10 | QFontMetrics::width | Low | No | ✅ DONE |
 | 11 | QTextCodec | Low | **Yes** | Partial — stale include only |
 | 12 | QRegExp | Medium | **Yes** | ✅ DONE |
 | 13 | Qt4 branches | Medium | No | ✅ DONE |
@@ -469,14 +455,14 @@ directory has been deleted; `objects/nxcurve.h` now includes `<muParser.h>`.
 | 17 | SIGNAL/SLOT macros | Low | No | TODO |
 | 18 | qSort | Low | **Yes** | TODO |
 | 19 | QVariant::Type | Low | No | TODO |
-| 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets/qmuparser/qrtmidi removed; jsedit/artnet remain |
+| 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets/qmuparser/qrtmidi/jsedit removed; artnet remains |
 
 ### Remaining Qt6 blockers
 
 | Item | File(s) | Effort |
 |------|---------|--------|
 | QDesktopWidget (§2) | `gui/uiview.h`, `gui/uiview.cpp` | Small |
-| QMouseEvent::pos (§5) | `render/uirender.cpp`, `items/uitreeviewwidget.cpp`, `gui/qjsedit/jsedit.cpp` | Small |
+| QMouseEvent::pos (§5) | `render/uirender.cpp`, `items/uitreeviewwidget.cpp` | Small |
 | QTime timer (§6) | `render/uirender.h/.cpp`, `transport/transport.h`, `iannix.cpp` | Small |
 | QTextCodec include (§11) | `iannixapp.cpp` | Trivial — remove one `#include` |
 | qSort (§18) | `interfaces/interfaceosc.cpp` | Trivial |

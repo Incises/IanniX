@@ -26,7 +26,7 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="JSEdit" name="jsEditor">
+      <widget class="CodeEditor" name="jsEditor">
        <property name="plainText">
         <string/>
        </property>
@@ -87,9 +87,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>JSEdit</class>
+   <class>CodeEditor</class>
    <extends>QPlainTextEdit</extends>
-   <header>gui/qjsedit/jsedit.h</header>
+   <header>gui/codeeditor/codeeditor.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

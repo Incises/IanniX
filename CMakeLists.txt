@@ -79,6 +79,9 @@ endif()
 # ---------------------------------------------------------------------------
 find_package(muparser REQUIRED)
 find_package(RtMidi   REQUIRED)
+find_package(KF5SyntaxHighlighting REQUIRED
+    HINTS /usr/lib64/cmake/KF5SyntaxHighlighting
+)
 
 # ---------------------------------------------------------------------------
 # Optional features (disabled by default)
@@ -194,17 +197,23 @@ set(OBJECTS_SOURCES
     objects/nxcurve.cpp objects/nxcursor.cpp objects/nxobject.cpp
 )
 
-# -- GUI (includes vendored jsedit) --
+# -- GUI --
 set(GUI_HEADERS
     gui/uiinspector.h gui/uiview.h gui/uihelp.h gui/uimessagebox.h gui/uisplashscreen.h
-    gui/qjsedit/jsedit.h
 )
 set(GUI_SOURCES
     gui/uiinspector.cpp gui/uiview.cpp gui/uihelp.cpp gui/uimessagebox.cpp gui/uisplashscreen.cpp
-    gui/qjsedit/jsedit.cpp
 )
 set(GUI_FORMS
     gui/uiinspector.ui gui/uiview.ui gui/uihelp.ui gui/uimessagebox.ui
+)
+
+# -- Generic code editor widget (KSyntaxHighlighting-backed, reusable) --
+set(EDITOR_HEADERS
+    gui/codeeditor/codeeditor.h
+)
+set(EDITOR_SOURCES
+    gui/codeeditor/codeeditor.cpp
 )
 
 # -- Items --
@@ -360,6 +369,7 @@ set(ALL_SOURCES
     ${GEOMETRY_SOURCES}    ${GEOMETRY_HEADERS}
     ${OBJECTS_SOURCES}     ${OBJECTS_HEADERS}
     ${GUI_SOURCES}         ${GUI_HEADERS}
+    ${EDITOR_SOURCES}      ${EDITOR_HEADERS}
     ${ITEMS_SOURCES}       ${ITEMS_HEADERS}
     ${INTERFACES_SOURCES}  ${INTERFACES_HEADERS}
     ${ABSTRACTIONS_SOURCES} ${ABSTRACTIONS_HEADERS}
@@ -412,7 +422,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry
     ${CMAKE_CURRENT_SOURCE_DIR}/objects
     ${CMAKE_CURRENT_SOURCE_DIR}/gui
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/qjsedit
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/codeeditor
     ${CMAKE_CURRENT_SOURCE_DIR}/items
     ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
     ${OPTIONAL_INCLUDES}
@@ -428,7 +438,7 @@ endif()
 # ---------------------------------------------------------------------------
 # Link Qt
 # ---------------------------------------------------------------------------
-target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS} muparser::muparser RtMidi::rtmidi ${OPTIONAL_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS} muparser::muparser RtMidi::rtmidi KF5::SyntaxHighlighting ${OPTIONAL_LIBS})
 
 # ---------------------------------------------------------------------------
 # Platform-specific libraries

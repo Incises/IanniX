@@ -38,6 +38,7 @@ UiEditor::UiEditor(QWidget *parent) :
     connect(ui->actionClose,       SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionRefreshCode, SIGNAL(triggered()), SLOT(refresh()));
 
+    ui->jsEditor->setLanguage(QStringLiteral("JavaScript"));
     ui->jsEditor->setTextWrapEnabled(false);
     ui->jsEditor->setLineNumbersVisible(true);
     ui->jsEditor->setCodeFoldingEnabled(true);
