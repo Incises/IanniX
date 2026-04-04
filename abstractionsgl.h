@@ -61,9 +61,7 @@ public:
         QStringList familySplit = family.split("|", QString::SkipEmptyParts);
         if(familySplit.count() > 1) {
             font.setFamily   (familySplit.at(0));
-#ifndef IANNIX_32
             font.setStyleName(familySplit.at(1));
-#endif
         }
         else
             font.setFamily(familySplit.at(0));
@@ -75,10 +73,8 @@ public:
         font.setPLeading(pLeading);
         font.setAlignement(options);
         font.setLetterSpacing(QFont::PercentageSpacing, spacing);
-#ifndef IANNIX_32
         if(!font.exactMatch())
             qDebug("[FONT] %s —> %s, %s", qPrintable(family), qPrintable(font.family()), qPrintable(font.styleName()));
-#endif
         return font;
     }
 };

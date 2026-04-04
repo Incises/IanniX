@@ -1,9 +1,7 @@
 /*
     All the files of this directory are part of IanniX, a graphical real-time open-source sequencer for digital art
-    Copyright (C) 2010-2015 — IanniX Association
-
-    Project Manager: Thierry Coduys (http://www.le-hub.org)
-    Development:     Guillaume Jacquemin (https://www.buzzinglight.com)
+    Copyright (C) 2010-2015 - IanniX Association (https://www.iannix.org/)
+    Copyright (C) 2025-2026 - Hypar.XYZ (https://iannix.hypar.xyz/)
 
     These files were written by Guillaume Jacquemin.
 

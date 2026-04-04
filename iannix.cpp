@@ -1,7 +1,8 @@
 /*
     This file is part of IanniX, a graphical real-time open-source sequencer for digital art
 
-    Copyright (C) 2010-2015 — IanniX Association
+    Copyright (C) 2010-2015 - IanniX Association (https://www.iannix.org/)
+    Copyright (C) 2025-2026 - Hypar.XYZ (https://iannix.hypar.xyz/)
     Copyright (C) 2025 — Zhengchao Ding
 
     Original Author: Guillaume Jacquemin (https://www.buzzinglight.com)

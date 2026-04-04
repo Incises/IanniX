@@ -1,7 +1,7 @@
 /*
 	Performance: Pulsar MF 2014 (c) by Guillaume Jacquemin
-	This file was written by Guillaume Jacquemin
-
+	This file was originally written by Guillaume Jacquemin
+	
 	An interactive installation presented the 25th of January 2014 in MoFo festival,  Mains d'Œuvres, Paris, France
 	Controled with a MIDI 88 keys Keyboard & linked with sound server on MaxMSP
 	Second projection with C++ visualisation application, HTTP manager and BERG Cloud Little Printer
@@ -5349,7 +5349,8 @@ var curves =
 
 /*
     IanniX - a graphical real-time open-source sequencer for digital art
-    Copyright (C) 2010-2015 — IanniX Association
+    Copyright (C) 2010-2015 - IanniX Association (https://www.iannix.org/)
+    Copyright (C) 2025-2026 - Hypar.XYZ (https://iannix.hypar.xyz/)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

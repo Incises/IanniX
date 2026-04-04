@@ -1,7 +1,7 @@
 /*
 	Performance: (a-z)^2 (c) by 3 Days a Week (Guillaume Jacquemin / Matthieu Ranc)
-	This file was written by Guillaume Jacquemin and Matthieu Ranc.
-
+	This file was originally written by Guillaume Jacquemin and Matthieu Ranc.
+	
 	An interactive installation presented the 17th of June 2012 in Gare Experimentale, Paris, France
 	Controled with a KorgNano (MIDI) & linked with sound server on MaxMSP
 	

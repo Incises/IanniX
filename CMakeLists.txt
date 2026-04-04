@@ -1,5 +1,6 @@
 #    This file is part of IanniX, a graphical real-time open-source sequencer for digital art
-#    Copyright (C) 2010-2015 — IanniX Association
+# Copyright (C) 2010-2015 - IanniX Association (https://www.iannix.org/)
+# Copyright (C) 2025-2026 - Hypar.XYZ (https://iannix.hypar.xyz/)
 #
 #    IanniX is a free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,8 +25,57 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+if(CMAKE_SIZEOF_VOID_P AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR
+        "IanniX no longer supports 32-bit builds. "
+        "Please configure a 64-bit toolchain to ensure consistent numerical precision and behavior."
+    )
+endif()
+
+set(IANNIX_TARGET_ARCHITECTURES "")
+if(APPLE AND CMAKE_OSX_ARCHITECTURES)
+    set(IANNIX_TARGET_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES})
+elseif(CMAKE_SYSTEM_PROCESSOR)
+    set(IANNIX_TARGET_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
+endif()
+
+set(IANNIX_SUPPORTED_ARCHITECTURES "")
+foreach(_arch IN LISTS IANNIX_TARGET_ARCHITECTURES)
+    string(TOLOWER "${_arch}" _arch_lc)
+    if(_arch_lc MATCHES "^(x86_64|amd64)$")
+        list(APPEND IANNIX_SUPPORTED_ARCHITECTURES "${_arch}")
+    elseif(_arch_lc MATCHES "^(arm64|aarch64)$")
+        list(APPEND IANNIX_SUPPORTED_ARCHITECTURES "${_arch}")
+    else()
+        message(WARNING
+            "Configuring IanniX for an unverified 64-bit architecture: ${_arch}. "
+            "The project is actively maintained for x86_64/AMD64, ARM64/aarch64, "
+            "and macOS universal x86_64+arm64 builds."
+        )
+    endif()
+endforeach()
+
+if(APPLE AND CMAKE_OSX_ARCHITECTURES)
+    list(JOIN CMAKE_OSX_ARCHITECTURES ", " IANNIX_OSX_ARCHS)
+    message(STATUS "Configuring macOS build for architectures: ${IANNIX_OSX_ARCHS}")
+elseif(WIN32 AND CMAKE_SYSTEM_PROCESSOR)
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" IANNIX_SYSTEM_PROCESSOR_LC)
+    if(IANNIX_SYSTEM_PROCESSOR_LC MATCHES "^(arm64|aarch64)$")
+        message(STATUS "Configuring Windows ARM64 build")
+    elseif(IANNIX_SYSTEM_PROCESSOR_LC MATCHES "^(x86_64|amd64)$")
+        message(STATUS "Configuring Windows x64 build")
+    endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR)
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" IANNIX_SYSTEM_PROCESSOR_LC)
+    if(IANNIX_SYSTEM_PROCESSOR_LC MATCHES "^(arm64|aarch64)$")
+        message(STATUS "Configuring Linux aarch64 build")
+    elseif(IANNIX_SYSTEM_PROCESSOR_LC MATCHES "^(x86_64|amd64)$")
+        message(STATUS "Configuring Linux x86_64 build")
+    endif()
+endif()
+
 # ---------------------------------------------------------------------------
-# Optional features (disabled by default, matching legacy .pro `false` blocks)
+# Optional features (disabled by default)
 # ---------------------------------------------------------------------------
 option(USE_FFMPEG  "Enable FFmpeg recording support (requires libav*)" OFF)
 option(USE_KINECT  "Enable Kinect support (requires libfreenect)"      OFF)
@@ -60,9 +110,9 @@ endif()
 if(APPLE)
     add_compile_definitions(__MACOSX_CORE__ IANNIX_64 SYPHON_INSTALLED)
 elseif(WIN32)
-    add_compile_definitions(__WINDOWS_MM__ IANNIX_64 IANNIX_32)
+    add_compile_definitions(__WINDOWS_MM__ IANNIX_64)
 elseif(UNIX)
-    add_compile_definitions(IANNIX_64 IANNIX_32)
+    add_compile_definitions(IANNIX_64)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_compile_definitions(__LINUX_ALSA__ __linux__ AVOID_TIMESTAMPING)
     endif()

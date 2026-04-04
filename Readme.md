@@ -12,8 +12,13 @@ Build IanniX
 All platforms
 -------------
 - Download & install Qt5 for your platform
-- Download & install QtCreator (included in Qt5 package)
-- Open IanniX.pro and build/run!
+- Configure with CMake:
+
+      cmake -B build -S .
+
+- Build:
+
+      cmake --build build
 
 Mac OS X specific
 -----------------
