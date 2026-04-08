@@ -21,6 +21,18 @@
 
 #include "uitreeviewwidget.h"
 
+namespace {
+
+QPoint dropEventPosition(const QDropEvent *event) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return event->position().toPoint();
+#else
+    return event->posF().toPoint();
+#endif
+}
+
+}
+
 UiTreeViewWidget::UiTreeViewWidget(QWidget *parent) :
     QTreeWidget(parent) {
     setAcceptDrops(true);
@@ -30,6 +42,6 @@ void UiTreeViewWidget::dragEnterEvent(QDragEnterEvent *event) {
     QTreeWidget::dragEnterEvent(event);
 }
 void UiTreeViewWidget::dropEvent(QDropEvent *event) {
-    emit(dropEvent(currentItem(), itemAt(event->pos())));
+    emit(dropEvent(currentItem(), itemAt(dropEventPosition(event))));
     event->acceptProposedAction();
 }

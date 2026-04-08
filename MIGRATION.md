@@ -105,7 +105,7 @@ All `event->delta()` calls have been replaced with `event->angleDelta().y()`.
 
 ## 5. QMouseEvent::pos to position
 
-**Status: TODO — blocks Qt6**
+**Status: DONE**
 
 `QMouseEvent::pos()` is deprecated in Qt 5.15 and removed in Qt6.
 
@@ -113,8 +113,9 @@ All `event->delta()` calls have been replaced with `event->angleDelta().y()`.
 
 | File | Lines |
 |------|-------|
-| `render/uirender.cpp` | 640, 642, 744, 779, 781 |
-| `items/uitreeviewwidget.cpp` | 35 |
+| `render/uirender.cpp` | 649, 652, 756, 794, 796 |
+| `items/uitreeviewwidget.cpp` | 44 |
+| `gui/qjsedit/jsedit.cpp` | 484, 485 |
 
 ### Migration path
 
@@ -124,6 +125,9 @@ event->pos()       // returns QPoint
 // After
 event->position().toPoint()  // position() returns QPointF (Qt 5.15+)
 ```
+
+For Qt5 compatibility, this migration uses local helpers that fall back to
+`localPos()` / `posF()` and switches to `position()` on Qt6.
 
 ---
 

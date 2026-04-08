@@ -22,6 +22,18 @@
 #include "uirender.h"
 #include "ui_uirender.h"
 
+namespace {
+
+QPoint mouseEventPosition(const QMouseEvent *event) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return event->position().toPoint();
+#else
+    return event->localPos().toPoint();
+#endif
+}
+
+}
+
 UiRender::UiRender(QWidget *parent, void *share) :
     Render(parent, share),
     ui(new Ui::UiRender) {
@@ -634,10 +646,12 @@ void UiRender::wheelEvent(QWheelEvent *event) {
     else                                            Application::current->execute(QString("%1 %2").arg(COMMAND_ZOOM).arg(Render::zoomValue - (qreal)event->delta() / 15.0F), ExecuteSourceGui);
 }
 void UiRender::mousePressEvent(QMouseEvent *event) {
+    const QPoint eventPos = mouseEventPosition(event);
+
     //Save state when pressed
-    mousePressedRawPos = NxPoint(event->pos().x(), event->pos().y());
+    mousePressedRawPos = NxPoint(eventPos.x(), eventPos.y());
     //Mouse position
-    mousePressedAreaPosNoCenter = NxPoint((event->pos().x() - (qreal)size().width()/2) / (qreal)size().width() * Render::axisArea.width(), (event->pos().y() - (qreal)size().height()/2) / (qreal)size().height() * Render::axisArea.height());
+    mousePressedAreaPosNoCenter = NxPoint((eventPos.x() - (qreal)size().width()/2) / (qreal)size().width() * Render::axisArea.width(), (eventPos.y() - (qreal)size().height()/2) / (qreal)size().height() * Render::axisArea.height());
     mousePressedAreaPos = mousePressedAreaPosNoCenter - Render::axisCenter;
     if(Application::mouseSnapX) {
         mousePressedAreaPosNoCenter.setX(qRound(mousePressedAreaPosNoCenter.x() / Render::axisGrid) * Render::axisGrid);
@@ -715,6 +729,8 @@ void UiRender::mousePressEvent(QMouseEvent *event) {
     }
 }
 void UiRender::mouseReleaseEvent(QMouseEvent *event) {
+    const QPoint eventPos = mouseEventPosition(event);
+
     //Edition
     if((Render::editing) && (Application::allowSelection) && (cursor().shape() != Qt::BlankCursor)) {
         /*
@@ -739,7 +755,7 @@ void UiRender::mouseReleaseEvent(QMouseEvent *event) {
         emit(selectionChanged());
 
         //Simple clic
-        if(mousePressedRawPos == NxPoint(event->pos().x(), event->pos().y())) {
+        if(mousePressedRawPos == NxPoint(eventPos.x(), eventPos.y())) {
             if(selectedHover) {
                 //Click on an object
                 if(!mouseShift)
@@ -772,11 +788,13 @@ void UiRender::mouseReleaseEvent(QMouseEvent *event) {
     }
 }
 void UiRender::mouseMoveEvent(QMouseEvent *event) {
+    const QPoint eventPos = mouseEventPosition(event);
+
     //Mouse position
     bool mouse3D = ((event->modifiers() & Qt::AltModifier) == Qt::AltModifier) && !((event->modifiers() & Qt::ControlModifier) == Qt::ControlModifier);
-    NxPoint mousePosNoCenter = NxPoint((event->pos().x() - (qreal)size().width()/2) / (qreal)size().width() * Render::axisArea.width(), (event->pos().y() - (qreal)size().height()/2) / (qreal)size().height() * Render::axisArea.height());
+    NxPoint mousePosNoCenter = NxPoint((eventPos.x() - (qreal)size().width()/2) / (qreal)size().width() * Render::axisArea.width(), (eventPos.y() - (qreal)size().height()/2) / (qreal)size().height() * Render::axisArea.height());
     NxPoint mousePos = mousePosNoCenter - Render::axisCenter, mousePosBackup = mousePos;
-    NxPoint deltaMouseRaw = NxPoint(event->pos().x(), event->pos().y()) - mousePressedRawPos;
+    NxPoint deltaMouseRaw = NxPoint(eventPos.x(), eventPos.y()) - mousePressedRawPos;
 
     if(Application::mouseSnapX)  mousePos.setX(qRound(mousePos.x() / Render::axisGrid) * Render::axisGrid);
     if(Application::mouseSnapY)  mousePos.setY(qRound(mousePos.y() / Render::axisGrid) * Render::axisGrid);

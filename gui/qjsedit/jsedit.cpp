@@ -461,6 +461,15 @@ protected:
     void paintEvent(QPaintEvent *event);
 };
 
+static QPoint mouseEventPosition(const QMouseEvent *event)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return event->position().toPoint();
+#else
+    return event->localPos().toPoint();
+#endif
+}
+
 SidebarWidget::SidebarWidget(JSEdit *editor)
     : QWidget(editor)
     , foldIndicatorWidth(0)
@@ -473,12 +482,14 @@ SidebarWidget::SidebarWidget(JSEdit *editor)
 
 void SidebarWidget::mousePressEvent(QMouseEvent *event)
 {
+    const QPoint eventPos = mouseEventPosition(event);
+
     if (foldIndicatorWidth > 0) {
         int xofs = width() - foldIndicatorWidth;
         int lineNo = -1;
         int fh = fontMetrics().lineSpacing();
-        int ys = event->pos().y();
-        if (event->pos().x() > xofs) {
+        int ys = eventPos.y();
+        if (eventPos.x() > xofs) {
             foreach (BlockInfo ln, lineNumbers)
                 if (ln.position < ys && (ln.position + fh) > ys) {
                     if (ln.foldable)
