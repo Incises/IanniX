@@ -14,6 +14,31 @@ project(IanniX
     LANGUAGES C CXX
 )
 
+include(GNUInstallDirs)
+
+set(IANNIX_DEPLOY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deploy")
+set(IANNIX_DEPLOY_SHARED_DIR "${IANNIX_DEPLOY_DIR}/shared")
+set(IANNIX_DEPLOY_LINUX_DIR "${IANNIX_DEPLOY_DIR}/linux")
+set(IANNIX_DEPLOY_MACOS_DIR "${IANNIX_DEPLOY_DIR}/macos")
+set(IANNIX_DEPLOY_WINDOWS_DIR "${IANNIX_DEPLOY_DIR}/windows")
+
+set(IANNIX_LINUX_DESKTOP_FILE "${IANNIX_DEPLOY_LINUX_DIR}/iannix.desktop")
+set(IANNIX_LINUX_APP_ICON "${IANNIX_DEPLOY_LINUX_DIR}/iannix.png")
+set(IANNIX_MACOS_INFO_PLIST "${IANNIX_DEPLOY_MACOS_DIR}/Info.plist")
+set(IANNIX_MACOS_APP_ICON "${IANNIX_DEPLOY_MACOS_DIR}/icon.icns")
+set(IANNIX_MACOS_FILE_ICON "${IANNIX_DEPLOY_MACOS_DIR}/icon_file.icns")
+set(IANNIX_WINDOWS_ICON_RC "${IANNIX_DEPLOY_WINDOWS_DIR}/icon.rc")
+
+set(IANNIX_RUNTIME_RESOURCE_DIRS Examples Tools Patches)
+
+function(iannix_install_resource_directories destination)
+    foreach(_dir IN LISTS IANNIX_RUNTIME_RESOURCE_DIRS)
+        if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${_dir}")
+            install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${_dir}" DESTINATION "${destination}")
+        endif()
+    endforeach()
+endfunction()
+
 # ---------------------------------------------------------------------------
 # Global settings
 # ---------------------------------------------------------------------------
@@ -460,7 +485,7 @@ elseif(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         winmm setupapi advapi32 user32 opengl32
     )
-    target_sources(${PROJECT_NAME} PRIVATE icon.rc)
+    target_sources(${PROJECT_NAME} PRIVATE ${IANNIX_WINDOWS_ICON_RC})
 
 elseif(UNIX)
     # OpenGL
@@ -473,7 +498,7 @@ endif()
 # ---------------------------------------------------------------------------
 if(APPLE)
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
+        MACOSX_BUNDLE_INFO_PLIST "${IANNIX_MACOS_INFO_PLIST}"
         MACOSX_BUNDLE_ICON_FILE  "icon.icns"
         MACOSX_BUNDLE_BUNDLE_NAME "IanniX"
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.iannix.desktop"
@@ -481,8 +506,8 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
     )
 
-    set(BUNDLE_ICON       "${CMAKE_CURRENT_SOURCE_DIR}/icon.icns")
-    set(BUNDLE_ICON_FILE  "${CMAKE_CURRENT_SOURCE_DIR}/icon_file.icns")
+    set(BUNDLE_ICON       "${IANNIX_MACOS_APP_ICON}")
+    set(BUNDLE_ICON_FILE  "${IANNIX_MACOS_FILE_ICON}")
     set_source_files_properties(${BUNDLE_ICON} ${BUNDLE_ICON_FILE}
         PROPERTIES MACOSX_PACKAGE_LOCATION Resources
     )
@@ -523,14 +548,22 @@ else()
 endif()
 
 # ---------------------------------------------------------------------------
-# Install rules (Linux / generic Unix)
+# Install rules and package staging
 # ---------------------------------------------------------------------------
-if(UNIX AND NOT APPLE)
-    include(GNUInstallDirs)
+if(APPLE)
+    install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
+elseif(WIN32)
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+    iannix_install_resource_directories(".")
+elseif(UNIX AND NOT APPLE)
     install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(FILES iannix.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-    install(FILES iannix.png     DESTINATION /usr/share/pixmaps)
+    install(FILES "${IANNIX_LINUX_DESKTOP_FILE}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+    install(FILES "${IANNIX_LINUX_APP_ICON}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps)
+    iannix_install_resource_directories("${CMAKE_INSTALL_DATAROOTDIR}/iannix")
 endif()
+
+include("${IANNIX_DEPLOY_SHARED_DIR}/CPackOptions.cmake")
+include(CPack)
 
 # ---------------------------------------------------------------------------
 # Build summary

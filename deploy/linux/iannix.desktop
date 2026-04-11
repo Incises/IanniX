@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=IanniX
 Comment=Graphical sequencer for digital art
-Exec=IanniX
-Icon=/usr/share/pixmaps/iannix.png
+Exec=iannix
+Icon=iannix
 Terminal=false
 Type=Application
 X-MultipleArgs=false

@@ -51,7 +51,8 @@ sudo cmake --install build
 ```
 
 This installs the binary to `/usr/local/bin/iannix`, the `.desktop` file to
-`/usr/local/share/applications/`, and the icon to `/usr/share/pixmaps/`.
+`/usr/local/share/applications/`, the icon to `/usr/local/share/pixmaps/`, and
+the runtime asset directories to `/usr/local/share/iannix/`.
 
 ---
 
@@ -218,6 +219,29 @@ The executable is written to `build\Release\IanniX.exe` (MSVC) or
 | `USE_FFMPEG` | `OFF` | Enable FFmpeg video recording (requires `libavcodec`, `libavutil`, `libavformat`, `libswscale`). |
 | `USE_KINECT` | `OFF` | Enable Kinect support via libfreenect (Linux/macOS only). |
 | `USE_WACOM` | `OFF` | Enable Wacom tablet support (macOS only). |
+
+---
+
+## Packaging
+
+Checked-in packaging inputs live under `deploy/`. Generated staging trees and
+installers are written to `dist/`.
+
+Common staging:
+
+```bash
+./deploy/shared/stage.sh
+```
+
+Platform package wrappers:
+
+```bash
+./deploy/linux/deb/package.sh
+./deploy/linux/rpm/package.sh
+./deploy/linux/appimage/package.sh
+./deploy/macos/pkg/package.sh
+powershell -ExecutionPolicy Bypass -File .\deploy\windows\nsis\package.ps1
+```
 
 Pass options at configure time:
 
