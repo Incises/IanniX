@@ -13,6 +13,9 @@ real time via OSC, MIDI, HTTP, Serial, TCP, UDP, and Syphon.
 
 ## Documentation
 
+Project home:
+<https://iannix.hypar.xyz>
+
 Original upstream documentation:
 <https://github.com/buzzinglight/IanniX/wiki>
 

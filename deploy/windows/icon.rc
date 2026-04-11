@@ -13,7 +13,7 @@ IDI_ICON1               ICON    DISCARDABLE     "icon.ico"
 #define VER_LEGALTRADEMARKS2_STR    VER_LEGALTRADEMARKS1_STR
 #define VER_ORIGINALFILENAME_STR    "IanniX.exe"
 #define VER_PRODUCTNAME_STR         "IanniX"
-#define VER_COMPANYDOMAIN_STR       "iannix.org"
+#define VER_COMPANYDOMAIN_STR       "iannix.hypar.xyz"
 
 
 VS_VERSION_INFO VERSIONINFO
