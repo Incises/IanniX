@@ -149,17 +149,17 @@ cmake -B build -S . -DUSE_KINECT=ON
 **Dependency notes**
 
 - `muParser` and `RtMidi` are no longer vendored — they must be provided as
-  system packages.  On Windows, use [vcpkg](https://vcpkg.io) (see below).
+  system packages. On Windows, [vcpkg](https://vcpkg.io) is the easiest option,
+  but it is not required.
 - On Windows, RtMidi uses the native Multimedia backend and links against
   `winmm`, `setupapi`, `advapi32`, `user32`, and `opengl32` automatically.
-- Optional features: `USE_FFMPEG=ON` requires FFmpeg dev libraries (also
-  available via vcpkg).  `USE_KINECT` is gated to Unix builds; `USE_WACOM` is
-  macOS-only.
+- Optional features: `USE_FFMPEG=ON` requires FFmpeg dev libraries. `USE_KINECT`
+  is gated to Unix builds; `USE_WACOM` is macOS-only.
 
-**vcpkg (required for muParser, RtMidi, and optional FFmpeg)**
+**Option 1: vcpkg (recommended, not required)**
 
-Windows has no system package manager, so [vcpkg](https://vcpkg.io) fills that
-role.
+[vcpkg](https://vcpkg.io) is the quickest way to get `muParser`, `RtMidi`, and
+optionally FFmpeg on Windows.
 
 Install vcpkg once:
 
@@ -187,6 +187,29 @@ Pass the vcpkg toolchain file to CMake:
 cmake -B build -S . ^
     -DCMAKE_TOOLCHAIN_FILE=%USERPROFILE%\vcpkg\scripts\buildsystems\vcpkg.cmake ^
     -DVCPKG_TARGET_TRIPLET=x64-windows
+cmake --build build --config Release
+```
+
+**Option 2: fetch and build dependencies manually**
+
+If you prefer not to use `vcpkg`, you can also clone and build the required
+libraries yourself, then point CMake at their install prefixes.
+
+Typical manual flow:
+
+```bat
+git clone https://github.com/beltoforion/muparser third_party\muparser
+git clone https://github.com/thestk/rtmidi third_party\rtmidi
+```
+
+Build and install those libraries however you prefer, then pass their prefix to
+CMake via `CMAKE_PREFIX_PATH`, individual package hints, or your toolchain
+environment.
+
+For example:
+
+```bat
+cmake -B build -S . -DCMAKE_PREFIX_PATH=C:\deps;C:\Qt\5.15.2\msvc2019_64
 cmake --build build --config Release
 ```
 
@@ -227,23 +250,37 @@ The executable is written to `build\Release\IanniX.exe` (MSVC) or
 Checked-in packaging inputs live under `deploy/`. Generated staging trees and
 installers are written to `dist/`.
 
-Common staging:
+Raw install-tree staging:
 
 ```bash
 ./deploy/shared/stage.sh
 ```
 
-Platform package wrappers:
+Generic CPack payloads:
+
+```bash
+./deploy/shared/cpack.sh TGZ
+./deploy/shared/cpack.sh ZIP
+```
+
+Platform-specific wrappers:
 
 ```bash
 ./deploy/linux/deb/package.sh
 ./deploy/linux/rpm/package.sh
 ./deploy/linux/appimage/package.sh
-./deploy/macos/pkg/package.sh
-powershell -ExecutionPolicy Bypass -File .\deploy\windows\nsis\package.ps1
+./deploy/macos/archive/package.sh
+powershell -ExecutionPolicy Bypass -File .\deploy\windows\archive\package.ps1
 ```
 
-Pass options at configure time:
+Recommended release flow:
+
+- Use `stage.sh` or the CPack wrappers locally to validate package contents.
+- Let CI inject platform runtime dependencies, sign/notarize, and build the
+  final `.pkg`, `NSIS`, `AppImage`, or release archives from those staged
+  outputs.
+
+Pass feature options at configure time:
 
 ```bash
 cmake -B build -S . -DUSE_FFMPEG=ON
