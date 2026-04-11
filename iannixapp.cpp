@@ -26,6 +26,63 @@
 #include "misc/options.h"
 #include "gui/uisplashscreen.h"
 
+namespace {
+
+QString normalizedPath(const QString &path) {
+    const QString canonicalPath = QFileInfo(path).canonicalFilePath();
+    if(!canonicalPath.isEmpty())
+        return canonicalPath;
+    return QDir(path).absolutePath();
+}
+
+void appendCandidateRoot(QStringList &candidateRoots, const QString &path) {
+    const QString candidatePath = normalizedPath(path);
+    if((!candidatePath.isEmpty()) && (!candidateRoots.contains(candidatePath)))
+        candidateRoots << candidatePath;
+}
+
+QStringList resourceRootCandidates(const QDir &applicationDir) {
+    QStringList candidateRoots;
+    QDir currentDir(applicationDir);
+    while(true) {
+        const QString currentPath = normalizedPath(currentDir.absolutePath());
+        appendCandidateRoot(candidateRoots, currentPath);
+        appendCandidateRoot(candidateRoots, currentPath + "/share/IanniX");
+        appendCandidateRoot(candidateRoots, currentPath + "/share/iannix");
+        if(!currentDir.cdUp())
+            break;
+    }
+    return candidateRoots;
+}
+
+QFileInfo resolveResourceDirectory(const QStringList &candidateRoots, const QString &directoryName, const QString &fallbackRoot) {
+    foreach(const QString &candidateRoot, candidateRoots) {
+        const QFileInfo candidateDirectory(QDir(candidateRoot).absoluteFilePath(directoryName));
+        if((candidateDirectory.exists()) && (candidateDirectory.isDir()))
+            return candidateDirectory;
+    }
+    return QFileInfo(QDir(fallbackRoot).absoluteFilePath(directoryName));
+}
+
+QFileInfo resolveApplicationRoot(const QFileInfo &examplesDir, const QFileInfo &toolsDir, const QFileInfo &patchesDir, const QString &fallbackRoot) {
+    QStringList resourceParents;
+    foreach(const QFileInfo &resourceDir, QFileInfoList() << examplesDir << toolsDir << patchesDir) {
+        if((resourceDir.exists()) && (resourceDir.isDir()) && (!resourceParents.contains(resourceDir.absolutePath())))
+            resourceParents << resourceDir.absolutePath();
+    }
+    if(resourceParents.count() == 1)
+        return QFileInfo(resourceParents.first());
+    if((toolsDir.exists()) && (toolsDir.isDir()))
+        return QFileInfo(toolsDir.absolutePath());
+    if((examplesDir.exists()) && (examplesDir.isDir()))
+        return QFileInfo(examplesDir.absolutePath());
+    if((patchesDir.exists()) && (patchesDir.isDir()))
+        return QFileInfo(patchesDir.absolutePath());
+    return QFileInfo(fallbackRoot);
+}
+
+}
+
 
 int main(int argc, char *argv[]) {
     IanniXApp iannixApp(argc, argv);
@@ -86,23 +143,25 @@ void IanniXApp::launch(int &argc, char **argv) {
     pathApplicationDir.cdUp();
 #endif
     Application::pathDocuments   = QFileInfo(QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation).first() + "/IanniX");
-    Application::pathApplication = QFileInfo(pathApplicationDir.absolutePath());
-    Application::pathCurrent     = QFileInfo(QDir::currentPath());
-    if((Application::pathApplication.absoluteFilePath().endsWith("/IanniX-build-64")) || (Application::pathApplication.absoluteFilePath().endsWith("/IanniX-build-32")))
-        Application::pathApplication = QFileInfo(Application::pathApplication.absoluteFilePath().remove("-build-64").remove("-build-32"));
-    if(Application::pathApplication.absoluteFilePath().endsWith("/IanniX-build/release"))
-        Application::pathApplication = QFileInfo(Application::pathApplication.absoluteFilePath().remove("-build/release"));
-    if(Application::pathApplication.absoluteFilePath().endsWith("/IanniX-build"))
-        Application::pathApplication = QFileInfo(Application::pathApplication.absoluteFilePath().remove("-build"));
+    Application::pathCurrent = QFileInfo(QDir::currentPath());
 
 #ifdef Q_OS_MAC
+    Application::pathApplication = QFileInfo(pathApplicationDirM.absolutePath() + "/Resources");
     Application::pathExamples = pathApplicationDirM.absolutePath() + "/Resources/Examples";
     Application::pathTools    = pathApplicationDirM.absolutePath() + "/Resources/Tools";
     Application::pathPatches  = pathApplicationDirM.absolutePath() + "/Resources/Patches";
 #else
-    Application::pathExamples = Application::pathApplication.absoluteFilePath() + "/Examples";
-    Application::pathTools    = Application::pathApplication.absoluteFilePath() + "/Tools";
-    Application::pathPatches  = Application::pathApplication.absoluteFilePath() + "/Patches";
+    // Probe common runtime layouts instead of assuming a single build-tree shape:
+    // source tree (.../IanniX/{Examples,Tools,Patches}), adjacent resources next
+    // to the binary, and install prefixes such as .../bin plus ../share/iannix.
+    const QStringList candidateRoots = resourceRootCandidates(pathApplicationDir);
+    Application::pathExamples = resolveResourceDirectory(candidateRoots, "Examples", pathApplicationDir.absolutePath());
+    Application::pathTools    = resolveResourceDirectory(candidateRoots, "Tools",    pathApplicationDir.absolutePath());
+    Application::pathPatches  = resolveResourceDirectory(candidateRoots, "Patches",  pathApplicationDir.absolutePath());
+    Application::pathApplication = resolveApplicationRoot(Application::pathExamples,
+                                                         Application::pathTools,
+                                                         Application::pathPatches,
+                                                         pathApplicationDir.absolutePath());
 #endif
 
     qDebug("Paths");
@@ -111,6 +170,7 @@ void IanniXApp::launch(int &argc, char **argv) {
     qDebug("\tCurrent    : %s", qPrintable(Application::pathCurrent    .absoluteFilePath()));
     qDebug("\tExamples   : %s", qPrintable(Application::pathExamples   .absoluteFilePath()));
     qDebug("\tTools      : %s", qPrintable(Application::pathTools      .absoluteFilePath()));
+    qDebug("\tPatches    : %s", qPrintable(Application::pathPatches    .absoluteFilePath()));
     qDebug("Arguments");
     for(quint16 i = 0 ; i < argc ; i++)
         qDebug("\t%2d=\t%s", i, argv[i]);

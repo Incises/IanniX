@@ -47,9 +47,12 @@ int scriptErrorLine(const QJSValue &errorValue) {
 }
 
 QJSValue callScriptFunction(QJSValue function, const QJSValueList &arguments = QJSValueList()) {
-    if(function.isCallable())
-        return function.call(arguments);
-    return QJSValue();
+    if(!function.isCallable())
+        return QJSValue();
+    QJSValue result = function.call(arguments);
+    if(result.isError())
+        Transport::editor->scriptError(scriptErrorDetails(result), scriptErrorLine(result));
+    return result;
 }
 }
 

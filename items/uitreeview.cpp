@@ -58,18 +58,20 @@ QList<UiSyncItem*> UiTreeView::getSelection(bool shouldHaveParent) {
 }
 
 void UiTreeView::askImport(bool files) {
-    QFileDialog *dialogFile = new QFileDialog(0);
-    dialogFile->setDirectory(".");
     if(files) {
-        dialogFile->setFileMode(QFileDialog::ExistingFiles);
-        dialogFile->setNameFilters(QStringList() << "Image files (*.png *.xpm *.jpg)" << "Text files (*.txt)" << "Any files (*)");
-        if(dialogFile->exec())
-            askImport(dialogFile->selectedFiles());
+        const QStringList selectedFiles = QFileDialog::getOpenFileNames(this,
+                                                                        tr("Import files"),
+                                                                        QDir::currentPath(),
+                                                                        tr("Image files (*.png *.xpm *.jpg);;Text files (*.txt);;Any files (*)"));
+        if(!selectedFiles.isEmpty())
+            askImport(selectedFiles);
     }
     else {
-        dialogFile->setFileMode(QFileDialog::DirectoryOnly);
-        if(dialogFile->exec())
-            askImport(dialogFile->selectedFiles());
+        const QString selectedDirectory = QFileDialog::getExistingDirectory(this,
+                                                                            tr("Import directory"),
+                                                                            QDir::currentPath());
+        if(!selectedDirectory.isEmpty())
+            askImport(QStringList() << selectedDirectory);
     }
 }
 void UiTreeView::askImport(QStringList filesStr) {
@@ -239,4 +241,3 @@ void UiTreeView::showOpen     (bool val) { canOpen = val; }
 void UiTreeView::showSaveAs   (bool /*val*/) {  }
 void UiTreeView::showCopy     (bool /*val*/) {  }
 void UiTreeView::showPaste    (bool /*val*/) {  }
-

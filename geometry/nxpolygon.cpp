@@ -57,7 +57,7 @@ static void qt_polygon_isect_line(const NxPoint &p1, const NxPoint &p2, const Nx
 NxRect NxPolygon::boundingRect() const {
     if (isEmpty())
         return NxRect(0, 0, 0, 0, 0, 0);
-    register const NxPoint *pd = constData();
+    const NxPoint *pd = constData();
     qreal minx, maxx, miny, maxy, minz, maxz;
     minx = maxx = pd->x();
     miny = maxy = pd->y();

@@ -160,7 +160,7 @@ UiInspector::UiInspector(QWidget *parent) :
     ui->equationTemplate->clear();
     addEquationTemplate("Templates", "", true);
     addEquationTemplate("--", "");
-    QFileInfoList files = QDir(Application::pathApplication.absoluteFilePath() + "/Tools/Templates/").entryInfoList(QStringList() << "*.txt", QDir::Files | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase);
+    QFileInfoList files = QDir(Application::pathTools.absoluteFilePath() + "/Templates/").entryInfoList(QStringList() << "*.txt", QDir::Files | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase);
     files <<              QDir(Application::pathDocuments.absoluteFilePath()   + "/Templates/").entryInfoList(QStringList() << "*.txt", QDir::Files | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase);
     bool firstTemplate = true;
     QString title;

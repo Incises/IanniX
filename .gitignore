@@ -3,10 +3,20 @@
 *.7pre1
 *.app/
 *.mov
-*-build
 *.swp
 Thumbs.db
+
+# build
+*-build
 build/
 build-*/
+
 # Qt Designer generated UI headers
 ui_*.h
+
+# agent workflow
+.cursor/
+.codex
+AGENTS.md
+CLAUDE.md
+GEMINI.md

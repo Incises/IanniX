@@ -21,6 +21,16 @@
 
 #include "uitreedelegate.h"
 
+namespace {
+
+QString nativeDialogFilter(const UiTreeViewOptions &options) {
+    if((!options.dialogFile) || (options.dialogFile->nameFilters().isEmpty()))
+        return QString();
+    return options.dialogFile->nameFilters().join(";;");
+}
+
+}
+
 UiTreeDelegate::UiTreeDelegate(const UiTreeViewOptions &_options, QAbstractItemModel *_model, QObject *parent) :
     QItemDelegate(parent) {
     options = _options;
@@ -43,13 +53,41 @@ QWidget *UiTreeDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
         return editor;
     }
     else if((options.type.startsWith("file")) && (options.model)) {
-        QFileDialog *dialog = new QFileDialog(0);
-        dialog->setFileMode(options.dialogFile->fileMode());
-        dialog->setNameFilters(options.dialogFile->nameFilters());
-        dialog->setDirectory(QFileInfo(index.model()->data(index, Qt::EditRole).toString()).absoluteDir());
-        dialog->selectFile(index.model()->data(index, Qt::EditRole).toString());
-        if(dialog->exec()) {
-            foreach(const QString &selectedFile, dialog->selectedFiles()) {
+        const QString currentValue = index.model()->data(index, Qt::EditRole).toString();
+        const QFileInfo currentFileInfo(currentValue);
+        const QString initialPath = currentValue.isEmpty() ? QDir::currentPath() : currentFileInfo.absoluteFilePath();
+        QStringList selectedFiles;
+
+        switch(options.dialogFile ? options.dialogFile->fileMode() : QFileDialog::ExistingFile) {
+        case QFileDialog::ExistingFiles:
+            selectedFiles = QFileDialog::getOpenFileNames(parent,
+                                                          QString(),
+                                                          initialPath,
+                                                          nativeDialogFilter(options));
+            break;
+        case QFileDialog::Directory: {
+            const QString directory = QFileDialog::getExistingDirectory(parent, QString(), initialPath);
+            if(!directory.isEmpty())
+                selectedFiles << directory;
+            break;
+        }
+        case QFileDialog::AnyFile:
+            selectedFiles << QFileDialog::getSaveFileName(parent,
+                                                          QString(),
+                                                          initialPath,
+                                                          nativeDialogFilter(options));
+            break;
+        case QFileDialog::ExistingFile:
+        default:
+            selectedFiles << QFileDialog::getOpenFileName(parent,
+                                                          QString(),
+                                                          initialPath,
+                                                          nativeDialogFilter(options));
+            break;
+        }
+
+        foreach(const QString &selectedFile, selectedFiles) {
+            if(!selectedFile.isEmpty()) {
                 options.model->setData(index, selectedFile, Qt::EditRole);
                 break;
             }
