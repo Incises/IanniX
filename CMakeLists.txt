@@ -134,11 +134,11 @@ endif()
 
 # -- Core & Misc --
 set(CORE_HEADERS
-    iannix.h iannixapp.h iannix_spec.h iannix_cmd.h
+    app/iannix.h app/iannixapp.h app/iannix_spec.h app/iannix_cmd.h
     misc/help.h misc/application.h misc/options.h misc/applicationexecute.h
 )
 set(CORE_SOURCES
-    iannix.cpp iannixapp.cpp iannix_spec.cpp
+    app/iannix.cpp app/iannixapp.cpp app/iannix_spec.cpp
     misc/help.cpp misc/application.cpp misc/options.cpp misc/applicationexecute.cpp
 )
 
@@ -251,8 +251,8 @@ set(INTERFACES_FORMS
 
 
 # -- AbstractionsGL --
-set(ABSTRACTIONS_HEADERS abstractionsgl.h)
-set(ABSTRACTIONS_SOURCES abstractionsgl.cpp)
+set(ABSTRACTIONS_HEADERS render/abstractionsgl.h)
+set(ABSTRACTIONS_SOURCES render/abstractionsgl.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform-conditional sources
@@ -415,6 +415,7 @@ endif()
 # ---------------------------------------------------------------------------
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/app
     ${CMAKE_CURRENT_SOURCE_DIR}/misc
     ${CMAKE_CURRENT_SOURCE_DIR}/messages
     ${CMAKE_CURRENT_SOURCE_DIR}/transport

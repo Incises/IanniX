@@ -29,7 +29,7 @@ The main runtime object is `IanniX`.
 
 The startup path is:
 
-1. `main()` in `iannixapp.cpp` creates `IanniXApp`
+1. `main()` in `app/iannixapp.cpp` creates `IanniXApp`
 2. `IanniXApp::launch()` discovers application paths, splash screen, fonts, and the project to load
 3. `IanniX` is constructed
 4. `IanniX` creates the main window (`UiView`), renderer, inspector, transport UI, interfaces, and message infrastructure
@@ -411,8 +411,8 @@ For someone new to the codebase, this is a good order:
 
 1. `BUILD.md`
 2. `MIGRATION.md`
-3. `iannixapp.cpp`
-4. `iannix.h` / `iannix.cpp`
+3. `app/iannixapp.cpp`
+4. `app/iannix.h` / `app/iannix.cpp`
 5. `objects/nxdocument.*`
 6. `objects/nxobject.*`, `nxcurve.*`, `nxcursor.*`, `nxtrigger.*`, `nxgroup.*`
 7. `render/uirender.*`

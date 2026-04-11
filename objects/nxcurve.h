@@ -29,7 +29,7 @@
 #include "nxobject.h"
 #include "qmath.h"
 #include "items/uipathpointsitem.h"
-#include "../abstractionsgl.h"
+#include "render/abstractionsgl.h"
 #ifdef Q_OS_WIN
 #define M_E        2.71828182845904523536
 #define M_LOG2E    1.44269504088896340736

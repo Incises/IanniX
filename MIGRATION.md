@@ -145,8 +145,8 @@ itself is not removed in Qt6, but this misuse triggers deprecation warnings.
 | `render/uirender.h` | `QTime renderMeasure` | member |
 | `render/uirender.cpp` | `renderMeasure` | `.start()` / `.elapsed()` |
 | `transport/transport.h` | `static QTime renderMeasureAbsolute` | member |
-| `iannix.h` | `#include <QTime>` | pulled in for timer use |
-| `iannix.cpp` | local `QTime` | `.start()` / `.elapsed()` |
+| `app/iannix.h` | `#include <QTime>` | pulled in for timer use |
+| `app/iannix.cpp` | local `QTime` | `.start()` / `.elapsed()` |
 
 ### Migration path
 
@@ -182,7 +182,7 @@ No occurrences of `qrand` or `qsrand` remain in the codebase.
 
 | File | Line | Deprecated API |
 |------|------|----------------|
-| `abstractionsgl.cpp` | 696 | `QPainter::HighQualityAntialiasing` |
+| `render/abstractionsgl.cpp` | 696 | `QPainter::HighQualityAntialiasing` |
 
 ### Migration path
 
@@ -206,7 +206,7 @@ painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 
 | File | Lines | API |
 |------|-------|-----|
-| `abstractionsgl.cpp` | 705, 752 | `QTextOption::setTabStop(40)` |
+| `render/abstractionsgl.cpp` | 705, 752 | `QTextOption::setTabStop(40)` |
 | `transport/uieditor.cpp` | 45, 51 | `QPlainTextEdit::setTabStopWidth(...)` |
 
 ### Migration path
@@ -237,14 +237,14 @@ editor->setTabStopDistance(width);
 **Status: PARTIAL**
 
 The vendored `qwebsockets/` code that used `QTextCodec` has been removed.
-One stale `#include <QTextCodec>` remains in `iannixapp.cpp` with no actual
+One stale `#include <QTextCodec>` remains in `app/iannixapp.cpp` with no actual
 usage — it is dead code.
 
 ### Files affected
 
 | File | Issue |
 |------|-------|
-| `iannixapp.cpp` | `#include <QTextCodec>` — unused, remove the include |
+| `app/iannixapp.cpp` | `#include <QTextCodec>` — unused, remove the include |
 
 ---
 
@@ -277,7 +277,7 @@ path still uses legacy OpenGL 1.x fixed-function pipeline throughout.
 
 | File | Occurrences |
 |------|-------------|
-| `abstractionsgl.cpp` | 4 blocks (lines 634, 652, 661, 675) |
+| `render/abstractionsgl.cpp` | 4 blocks (lines 634, 652, 661, 675) |
 | `objects/nxcursor.cpp` | 13+ blocks |
 | `objects/nxcurve.cpp` | multiple |
 | `objects/nxtrigger.cpp` | multiple |
@@ -333,7 +333,7 @@ The entire codebase uses string-based `connect(obj, SIGNAL(...), obj, SLOT(...))
 syntax.  This works in both Qt5 and Qt6, so it is not a blocker, but the modern
 pointer-based form catches errors at compile time and is faster at runtime.
 
-Approximately **200+ occurrences** across 22 files, with `iannix.cpp` (~37) and
+Approximately **200+ occurrences** across 22 files, with `app/iannix.cpp` (~37) and
 `gui/uiview.cpp` (~68) being the densest.
 
 ### Migration path
@@ -467,8 +467,8 @@ KSyntaxHighlighting definition name) at construction time.
 |------|---------|--------|
 | QDesktopWidget (§2) | `gui/uiview.h`, `gui/uiview.cpp` | Small |
 | QMouseEvent::pos (§5) | `render/uirender.cpp`, `items/uitreeviewwidget.cpp` | Small |
-| QTime timer (§6) | `render/uirender.h/.cpp`, `transport/transport.h`, `iannix.cpp` | Small |
-| QTextCodec include (§11) | `iannixapp.cpp` | Trivial — remove one `#include` |
+| QTime timer (§6) | `render/uirender.h/.cpp`, `transport/transport.h`, `app/iannix.cpp` | Small |
+| QTextCodec include (§11) | `app/iannixapp.cpp` | Trivial — remove one `#include` |
 | qSort (§18) | `interfaces/interfaceosc.cpp` | Trivial |
 | OpenGL legacy (§14) | 7 files | Large |
 | std::auto_ptr in vendored (§15) | `qmuparser/`, `qrtmidi/` | Small per file |
