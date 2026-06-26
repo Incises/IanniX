@@ -567,6 +567,21 @@ include("${IANNIX_DEPLOY_SHARED_DIR}/CPackOptions.cmake")
 include(CPack)
 
 # ---------------------------------------------------------------------------
+# Documentation (MkDocs)
+# ---------------------------------------------------------------------------
+find_program(MKDOCS_EXECUTABLE mkdocs)
+if(MKDOCS_EXECUTABLE)
+    add_custom_target(gen_doc
+        COMMAND ${MKDOCS_EXECUTABLE} build
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Building documentation with MkDocs"
+        VERBATIM
+    )
+else()
+    message(STATUS "MkDocs not found; 'gen_doc' target will not be available.")
+endif()
+
+# ---------------------------------------------------------------------------
 # Build summary
 # ---------------------------------------------------------------------------
 if(QT_VERSION STREQUAL "6")

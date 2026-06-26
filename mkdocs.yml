@@ -1,0 +1,12 @@
+site_name: IanniX Documentation
+docs_dir: Documentation
+theme:
+  name: mkdocs
+
+nav:
+  - Home: index.md
+  - 1. Introduction: 01-introduction.md
+  - 2. User Interface: 02-interface.md
+  - 3. Objects: 03-objects.md
+  - 4. Messages & Commands: 04-messages.md
+  - 5. Interfacing: 05-interfacing.md
