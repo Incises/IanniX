@@ -35,7 +35,7 @@ UiView::UiView(QWidget *parent) :
     Help::syncHelpWith(ui->actionImport_SVG,  COMMAND_CURVE_PATH);
 
 #ifndef Q_OS_MAC
-    ui->actionDelete->setShortcut(QApplication::trUtf8("UiView", "Delete"));
+    ui->actionDelete->setShortcut(QKeySequence::Delete);
 #endif
 
     //About

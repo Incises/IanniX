@@ -314,10 +314,11 @@ void UiFileItem::syncWith(qint16 depth) {
         directories.append(filename.file.absoluteFilePath());
         directories.append(syncWith(QDir(filename.file.absoluteFilePath()), depth));
     }
-    if(watcher)
+    if(watcher) {
         foreach(const QString &directory, directories)
             if(!watcher->directories().contains(directory))
                 watcher->addPath(directory);
+    }
 }
 QStringList UiFileItem::syncWith(const QDir &dir, qint16 depth) {
     QStringList directories;

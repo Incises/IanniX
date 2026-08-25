@@ -124,8 +124,10 @@ OpenGlTexture::~OpenGlTexture() {
     if(texturesCache.contains(filename))
         texturesCache.remove(filename);
     //qDebug("[OPENGL] Suppression de la texture #%d", texture);
+#ifdef VLC_INSTALLED
     if(video)
         delete video;
+#endif
     if(texture)
         glDeleteTextures(1, &texture);
 }
