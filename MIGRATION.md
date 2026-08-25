@@ -4,9 +4,9 @@ This document catalogs every deprecated API, vendored library, and modernization
 target in the IanniX codebase.  It is the authoritative reference for the ongoing
 Qt5 cleanup and future Qt6 migration.
 
-The Qt5 build currently produces compiler warnings, almost all `-Wdeprecated-declarations`.
+The Qt5 build currently compiles with **zero warnings**.
 Each section below maps to a category of work.  Items marked **DONE** have been
-verified clean by grep against the current source tree.
+verified clean by a full rebuild with clang against the current source tree.
 
 ---
 
@@ -16,21 +16,21 @@ verified clean by grep against the current source tree.
 2. [QDesktopWidget to QScreen](#2-qdesktopwidget-to-qscreen) ✅
 3. [QString::SplitBehavior to Qt::SplitBehavior](#3-qstringsplitbehavior-to-qtsplitbehavior) ✅
 4. [QWheelEvent::delta to angleDelta](#4-qwheeleventdelta-to-angledelta) ✅
-5. [QMouseEvent::pos to position](#5-qmouseeventpos-to-position)
+5. [QMouseEvent::pos to position](#5-qmouseeventpos-to-position) ✅
 6. [QTime as timer to QElapsedTimer](#6-qtime-as-timer-to-qelapsedtimer) ✅
 7. [qrand/qsrand to QRandomGenerator](#7-qrandqsrand-to-qrandomgenerator) ✅
-8. [QPainter deprecated hints](#8-qpainter-deprecated-hints)
-9. [QTextOption::setTabStop and setTabStopWidth](#9-qtextoptionsettabstop-and-settabstopwidth)
+8. [QPainter deprecated hints](#8-qpainter-deprecated-hints) ✅
+9. [QTextOption::setTabStop and setTabStopWidth](#9-qtextoptionsettabstop-and-settabstopwidth) ✅
 10. [QFontMetrics::width to horizontalAdvance](#10-qfontmetricswidth-to-horizontaladvance) ✅
-11. [QTextCodec (removed in Qt6)](#11-qtextcodec-removed-in-qt6)
+11. [QTextCodec (removed in Qt6)](#11-qtextcodec-removed-in-qt6) ✅
 12. [QRegExp to QRegularExpression](#12-qregexp-to-qregularexpression) ✅
 13. [Qt4 preprocessor branches](#13-qt4-preprocessor-branches) ✅
 14. [OpenGL immediate mode and QGLWidget](#14-opengl-immediate-mode-and-qglwidget)
-15. [std::auto_ptr to std::unique_ptr](#15-stdauto_ptr-to-stdunique_ptr)
-16. [register storage class](#16-register-storage-class)
+15. [std::auto_ptr to std::unique_ptr](#15-stdauto_ptr-to-stdunique_ptr) ✅
+16. [register storage class](#16-register-storage-class) ✅
 17. [SIGNAL/SLOT macros to function pointers](#17-signalslot-macros-to-function-pointers)
-18. [qSort to std::sort](#18-qsort-to-stdsort)
-19. [QVariant::Type enum](#19-qvarianttype-enum)
+18. [qSort to std::sort](#18-qsort-to-stdsort) ✅
+19. [QVariant::Type enum](#19-qvarianttype-enum) ✅
 20. [Vendored libraries](#20-vendored-libraries)
 21. [Summary matrix](#21-summary-matrix)
 
@@ -90,8 +90,9 @@ QGuiApplication::screenAt(point)
 
 **Status: DONE**
 
-All `QString::SkipEmptyParts` and `QString::KeepEmptyParts` occurrences have been
-replaced with the Qt 5.14+ namespace form `Qt::SkipEmptyParts` / `Qt::KeepEmptyParts`.
+All `QString::SkipEmptyParts` and `QString::KeepEmptyParts` occurrences (51 across
+18 files) have been replaced with the Qt 5.14+ namespace form `Qt::SkipEmptyParts`
+/ `Qt::KeepEmptyParts`.  Verified by a warning-free full rebuild.
 
 ---
 
@@ -100,6 +101,7 @@ replaced with the Qt 5.14+ namespace form `Qt::SkipEmptyParts` / `Qt::KeepEmptyP
 **Status: DONE**
 
 All `event->delta()` calls have been replaced with `event->angleDelta().y()`.
+The last three were in `UiRender::wheelEvent` (`render/uirender.cpp`).
 
 ---
 
@@ -170,56 +172,33 @@ Replace `#include <QTime>` with `#include <QElapsedTimer>` in affected headers.
 
 **Status: DONE**
 
-No occurrences of `qrand` or `qsrand` remain in the codebase.
+No occurrences of `qrand` or `qsrand` remain.  The anonymous-id generation in
+`app/iannix.cpp` now uses `QRandomGenerator::global()->generate()`; the adjacent
+deprecated `QDateTime(QDate)` constructor was replaced with `QDate::startOfDay()`.
 
 ---
 
 ## 8. QPainter deprecated hints
 
-**Status: TODO**
+**Status: DONE**
 
-### Files affected
-
-| File | Line | Deprecated API |
-|------|------|----------------|
-| `render/abstractionsgl.cpp` | 696 | `QPainter::HighQualityAntialiasing` |
-
-### Migration path
-
-Remove `QPainter::HighQualityAntialiasing` from the render-hint flags.
-`QPainter::Antialiasing` alone has provided the same behavior since Qt 5.0.
-
-```cpp
-// Before
-painter->setRenderHints(QPainter::Antialiasing | QPainter::HighQualityAntialiasing | QPainter::TextAntialiasing);
-// After
-painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-```
+`QPainter::HighQualityAntialiasing` was removed from the render-hint flags in
+`render/abstractionsgl.cpp`.  `QPainter::Antialiasing` alone has provided the
+same behavior since Qt 5.0.
 
 ---
 
 ## 9. QTextOption::setTabStop and setTabStopWidth
 
-**Status: TODO**
+**Status: DONE**
 
-### Files affected
+All call sites migrated to the Qt 5.10+ `setTabStopDistance` API:
 
-| File | Lines | API |
-|------|-------|-----|
-| `render/abstractionsgl.cpp` | 705, 752 | `QTextOption::setTabStop(40)` |
-| `transport/uieditor.cpp` | 45, 51 | `QPlainTextEdit::setTabStopWidth(...)` |
-
-### Migration path
-
-```cpp
-// Before
-textOption.setTabStop(40);
-editor->setTabStopWidth(width);
-
-// After (Qt 5.10+)
-textOption.setTabStopDistance(40);
-editor->setTabStopDistance(width);
-```
+- `render/abstractionsgl.cpp` — `QTextOption::setTabStop(40)` → `setTabStopDistance(40)`
+- `gui/codeeditor/codeeditor.cpp` — `CodeEditor::setTabStopWidth` wrapper now calls
+  `QPlainTextEdit::setTabStopDistance` internally (public API unchanged)
+- `messages/messagemanagerlog.ui` — `tabStopWidth` properties changed to
+  `tabStopDistance` so the uic-generated header is warning-free
 
 ---
 
@@ -234,17 +213,11 @@ editor->setTabStopDistance(width);
 
 ## 11. QTextCodec (removed in Qt6)
 
-**Status: PARTIAL**
+**Status: DONE**
 
-The vendored `qwebsockets/` code that used `QTextCodec` has been removed.
-One stale `#include <QTextCodec>` remains in `app/iannixapp.cpp` with no actual
-usage — it is dead code.
-
-### Files affected
-
-| File | Issue |
-|------|-------|
-| `app/iannixapp.cpp` | `#include <QTextCodec>` — unused, remove the include |
+The vendored `qwebsockets/` code that used `QTextCodec` has been removed, and
+the stale unused `#include <QTextCodec>` in `app/iannixapp.cpp` has been deleted.
+No `QTextCodec` references remain.
 
 ---
 
@@ -308,20 +281,11 @@ in the project source tree.
 
 ## 16. register storage class
 
-**Status: TODO**
+**Status: DONE**
 
-`register` is illegal in C++17 and will cause a compilation error with pedantic
-compilers.
-
-### Files affected
-
-| File | Line |
-|------|------|
-| `geometry/nxpolygon.cpp` | 62 |
-
-### Migration path
-
-Remove the `register` keyword.
+The `register` keyword has been removed from `geometry/nxpolygon.cpp`.  No
+occurrences remain in project source (remaining grep hits are English prose in
+vendored zeroconf headers).
 
 ---
 
@@ -351,43 +315,19 @@ Convert file by file.
 
 ## 18. qSort to std::sort
 
-**Status: TODO**
+**Status: DONE**
 
-### Files affected
-
-| File | Line |
-|------|------|
-| `interfaces/interfaceosc.cpp` | 211 |
-
-### Migration path
-
-```cpp
-// Before
-qSort(bonjourServices.begin(), bonjourServices.end(), BonjourService::sort);
-// After
-std::sort(bonjourServices.begin(), bonjourServices.end(), BonjourService::sort);
-```
+The single `qSort` call in `interfaces/interfaceosc.cpp` has been replaced with
+`std::sort` (and `<algorithm>` is now included).
 
 ---
 
 ## 19. QVariant::Type enum
 
-**Status: TODO**
+**Status: DONE**
 
-### Files affected
-
-| File | Line | Usage |
-|------|------|-------|
-| `items/uitreedelegate.cpp` | 132 | `data(index).canConvert(QVariant::Color)` |
-
-### Migration path
-
-```cpp
-// Before (deprecated in Qt6)
-data.canConvert(QVariant::Color)
-// After
-data.canConvert<QColor>()
-```
+`items/uitreedelegate.cpp` now uses the template form `canConvert<QColor>()`
+instead of the deprecated `canConvert(QVariant::Color)`.
 
 ---
 
@@ -444,45 +384,60 @@ KSyntaxHighlighting definition name) at construction time.
 | 2 | QDesktopWidget → QScreen | High | **Yes** | ✅ DONE |
 | 3 | QString::SplitBehavior | Medium | No | ✅ DONE |
 | 4 | QWheelEvent::delta | Low | **Yes** | ✅ DONE |
-| 5 | QMouseEvent::pos | Low | **Yes** | TODO |
+| 5 | QMouseEvent::pos | Low | **Yes** | ✅ DONE |
 | 6 | QTime → QElapsedTimer | Low | **Yes** | ✅ DONE |
 | 7 | qrand/qsrand | Low | **Yes** | ✅ DONE |
-| 8 | QPainter hints | Low | No | TODO |
-| 9 | setTabStop/Width | Low | No | TODO |
+| 8 | QPainter hints | Low | No | ✅ DONE |
+| 9 | setTabStop/Width | Low | No | ✅ DONE |
 | 10 | QFontMetrics::width | Low | No | ✅ DONE |
-| 11 | QTextCodec | Low | **Yes** | Partial — stale include only |
+| 11 | QTextCodec | Low | **Yes** | ✅ DONE |
 | 12 | QRegExp | Medium | **Yes** | ✅ DONE |
 | 13 | Qt4 branches | Medium | No | ✅ DONE |
 | 14 | OpenGL legacy | High | Partial | TODO |
 | 15 | std::auto_ptr | Low | Compiler err | ✅ DONE |
-| 16 | register keyword | Low | Compiler err | TODO |
+| 16 | register keyword | Low | Compiler err | ✅ DONE |
 | 17 | SIGNAL/SLOT macros | Low | No | TODO |
-| 18 | qSort | Low | **Yes** | TODO |
-| 19 | QVariant::Type | Low | No | TODO |
-| 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets/qmuparser/qrtmidi/jsedit removed; artnet remains |
+| 18 | qSort | Low | **Yes** | ✅ DONE |
+| 19 | QVariant::Type | Low | No | ✅ DONE |
+| 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets/qmuparser/qrtmidi/jsedit removed; artnet and qffmpeg remain |
 
-### Remaining Qt6 blockers
+### Additional fixes found by compiler audit (not in original catalog)
+
+All fixed; the full rebuild is now warning-free:
+
+- `gui/uiview.cpp` — mis-migrated `QApplication::trUtf8("UiView", "Delete")`
+  (deprecated, and wrong: "UiView" was passed as source text) replaced with
+  `QKeySequence::Delete`.
+- `messages/message.cpp` — deprecated `QHostAddress = QString` assignments now
+  use explicit `QHostAddress(QString)` construction; deprecated
+  `QByteArray += QString` appends now use explicit `.toUtf8()`.
+- `interfaces/interfacetcp.cpp` — deprecated `QByteArray::append(QString)` now
+  uses `.toUtf8()`.
+- `render/abstractionsgl.cpp` — `delete` on `void*` in `~OpenGlTexture()`
+  (undefined behavior when built without VLC) is now guarded by
+  `#ifdef VLC_INSTALLED`.
+- `items/uifileitem.cpp` — added braces to silence `-Wdangling-else`.
+
+### Remaining work
 
 | Item | File(s) | Effort |
 |------|---------|--------|
-| QDesktopWidget (§2) | `gui/uiview.h`, `gui/uiview.cpp` | Small |
-| QMouseEvent::pos (§5) | `render/uirender.cpp`, `items/uitreeviewwidget.cpp` | Small |
-| QTime timer (§6) | `render/uirender.h/.cpp`, `transport/transport.h`, `app/iannix.cpp` | Small |
-| QTextCodec include (§11) | `app/iannixapp.cpp` | Trivial — remove one `#include` |
-| qSort (§18) | `interfaces/interfaceosc.cpp` | Trivial |
-| OpenGL legacy (§14) | 7 files | Large |
-| std::auto_ptr in vendored (§15) | `qmuparser/`, `qrtmidi/` | Small per file |
-| register keyword (§16) | `geometry/nxpolygon.cpp` | Trivial |
+| OpenGL legacy (§14) | 7 files, ~35 `glBegin` blocks + display lists | Large — only remaining Qt6 blocker |
+| SIGNAL/SLOT macros (§17) | ~165 occurrences, 22 files | Low priority, not a blocker |
+| Vendored `interfaces/artnet/` (§20) | unused — delete or wire up | Small |
+| Vendored `gui/qffmpeg/` (§20) | optional `USE_FFMPEG` feature | High if kept |
 
 ### Recommended phases
 
-**Phase 1 — remaining Qt6 blockers (quick wins first):**
-Fix trivial items (§11, §16, §18) in one pass.  Then §2, §5, §6.  OpenGL (§14)
-is the only large item blocking Qt6 compatibility.
+**Phase 1 — DONE.** All small Qt6 blockers and deprecation warnings are fixed;
+the Qt5 build compiles with zero warnings.
 
-**Phase 2 — deprecation cleanup:**
-§8, §9, §10, §15, §17, §19.  Reduces build warnings to near zero.
+**Phase 2 — OpenGL modernization (§14):**
+Replace immediate-mode rendering with `QOpenGLBuffer` + `QOpenGLShaderProgram`
++ `QOpenGLVertexArrayObject`.  Render layer first (`uirender`,
+`abstractionsgl`), then objects (`nxcurve`, `nxcursor`, `nxtrigger`).  This is
+the only large item still blocking Qt6.
 
-**Phase 3 — modernization:**
-Replace vendored libraries with system equivalents (§20), modernize OpenGL
-rendering (§14), convert SIGNAL/SLOT connections to function-pointer form (§17).
+**Phase 3 — polish:**
+Convert SIGNAL/SLOT connections to function-pointer form (§17); decide the fate
+of `artnet/` and `qffmpeg/` (§20).
