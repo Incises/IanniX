@@ -109,12 +109,9 @@ void GlMesh::draw(GlPainter *painter) const
     if (!painter || !painter->isReady() || m_vertexCount <= 0 || !m_initialized)
         return;
 
-    QOpenGLShaderProgram *prog = m_hasUv ? painter->textureProgram() : painter->colorProgram();
+    QOpenGLShaderProgram *prog = painter->bindProgramFor(m_mode, m_hasUv);
     if (!prog)
         return;
-
-    prog->bind();
-    painter->applyUniforms(prog, m_hasUv);
     if (m_hasUv)
         prog->setUniformValue("uTexture", 0);
 

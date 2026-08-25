@@ -262,6 +262,14 @@ not a Qt6 API blocker.
 | `uirenderpreview` | Own GlPainter context; textured letterbox quad |
 | `extkinectmanager` | Dead `paint()` early-return; body uses GlPainter for Kinect builds |
 
+### Wide lines
+
+Core profile removed `glLineWidth > 1` (`GL_INVALID_VALUE`). Line primitives
+with width > 1 are expanded into screen-space quads by a geometry shader
+(`kWideLineGeom`); widths ≤ 1 use the regular line pipeline. Verified against
+Examples on a 2x display: grid, curves, triggers and cursors match or exceed
+the legacy renderer (whose display-list path fails on modern Mesa).
+
 ### Line stipple
 
 Former `glLineStipple` is approximated on the CPU (`GlGeom::dashifyStrip`) using

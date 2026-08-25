@@ -82,6 +82,36 @@ void main() {
 }
 )";
 
+// Wide lines were removed from Core profile (glLineWidth > 1 is invalid).
+// Expand line primitives into screen-space quads in a geometry shader.
+const char *kWideLineGeom = R"(
+#version 330 core
+layout(lines) in;
+layout(triangle_strip, max_vertices = 4) out;
+uniform vec2 uViewport;
+uniform float uLineWidthPx;
+void main() {
+    vec4 p0 = gl_in[0].gl_Position;
+    vec4 p1 = gl_in[1].gl_Position;
+    if (p0.w <= 0.0 || p1.w <= 0.0)
+        return;
+    vec2 ndc0 = p0.xy / p0.w;
+    vec2 ndc1 = p1.xy / p1.w;
+    vec2 screenDir = (ndc1 - ndc0) * uViewport;
+    float len = length(screenDir);
+    if (len < 1e-6)
+        return;
+    vec2 dir = screenDir / len;
+    // Half-width offset in NDC: (w/2 px) * (2/viewport px) = w/viewport
+    vec2 offsetNdc = vec2(-dir.y, dir.x) * uLineWidthPx / uViewport;
+    gl_Position = vec4((ndc0 + offsetNdc) * p0.w, p0.z, p0.w); EmitVertex();
+    gl_Position = vec4((ndc0 - offsetNdc) * p0.w, p0.z, p0.w); EmitVertex();
+    gl_Position = vec4((ndc1 + offsetNdc) * p1.w, p1.z, p1.w); EmitVertex();
+    gl_Position = vec4((ndc1 - offsetNdc) * p1.w, p1.z, p1.w); EmitVertex();
+    EndPrimitive();
+}
+)";
+
 // Optional ARB rectangle path for Syphon (pixel texcoords). May fail to
 // compile on strict Core drivers; Syphon draws are then skipped until a
 // TEXTURE_2D upload path lands (C-tier / platform work).
@@ -133,6 +163,7 @@ GlPainter::GlPainter()
     : m_ready(false)
     , m_inFrame(false)
     , m_textureRectReady(false)
+    , m_wideLineReady(false)
     , m_immActive(false)
     , m_immMode(GL_TRIANGLES)
     , m_lineWidth(1.f)
@@ -241,7 +272,9 @@ void GlPainter::shutdown()
     m_colorProgram.removeAllShaders();
     m_textureProgram.removeAllShaders();
     m_textureRectProgram.removeAllShaders();
+    m_wideLineProgram.removeAllShaders();
     m_textureRectReady = false;
+    m_wideLineReady = false;
     m_ready = false;
     if (s_current == this)
         s_current = nullptr;
@@ -253,6 +286,17 @@ bool GlPainter::compilePrograms()
         return false;
     if (!linkProgram(m_textureProgram, kTextureVert, kTextureFrag, "texture"))
         return false;
+
+    m_wideLineReady =
+        m_wideLineProgram.addShaderFromSourceCode(QOpenGLShader::Vertex, kColorVert) &&
+        m_wideLineProgram.addShaderFromSourceCode(QOpenGLShader::Geometry, kWideLineGeom) &&
+        m_wideLineProgram.addShaderFromSourceCode(QOpenGLShader::Fragment, kColorFrag) &&
+        m_wideLineProgram.link();
+    if (!m_wideLineReady) {
+        qWarning("GlPainter: wide-line program failed (%s); lines fall back to 1px",
+                 qPrintable(m_wideLineProgram.log()));
+        m_wideLineProgram.removeAllShaders();
+    }
 
     // Optional rectangle sampler for Syphon. Failure is non-fatal under
     // Compatibility: paintBackground can still use fixed-function for that path.
@@ -277,6 +321,11 @@ void GlPainter::beginFrame()
     m_textureId = 0;
     m_immActive = false;
     m_immVerts.clear();
+
+    // Device-pixel viewport for screen-space wide-line expansion.
+    GLint vp[4] = {0, 0, 1, 1};
+    glGetIntegerv(GL_VIEWPORT, vp);
+    m_viewportSize = QVector2D(float(qMax(1, int(vp[2]))), float(qMax(1, int(vp[3]))));
 }
 
 void GlPainter::endFrame()
@@ -386,8 +435,10 @@ void GlPainter::setColor(const QColor &c)
 void GlPainter::setLineWidth(float w)
 {
     m_lineWidth = w;
+    // Core profile rejects widths > 1 (GL_INVALID_VALUE); wide lines are
+    // expanded in the geometry shader instead.
     if (m_ready)
-        glLineWidth(w); // Core may clamp; retained for Compatibility / thin lines
+        glLineWidth(qMin(w, 1.f));
 }
 
 void GlPainter::bindTexture(TextureTarget target, GLuint id)
@@ -505,28 +556,38 @@ void GlPainter::end()
     m_immVerts.clear();
 }
 
-void GlPainter::flushImmediate(GLenum drawMode, const QVector<float> &verts, int vertexCount)
+QOpenGLShaderProgram *GlPainter::bindProgramFor(GLenum drawMode, bool textured)
 {
     QOpenGLShaderProgram *prog = &m_colorProgram;
-    bool textured = false;
 
-    if (m_textureTarget == Texture2D && m_textureId != 0) {
-        prog = &m_textureProgram;
-        textured = true;
-    } else if (m_textureTarget == TextureRectangle && m_textureId != 0) {
-        if (m_textureRectReady) {
+    const bool lineMode = (drawMode == GL_LINES) || (drawMode == GL_LINE_STRIP)
+                          || (drawMode == GL_LINE_LOOP);
+    if (!textured && lineMode && m_lineWidth > 1.05f && m_wideLineReady) {
+        prog = &m_wideLineProgram;
+    } else if (textured) {
+        if (m_textureTarget == TextureRectangle) {
+            if (!m_textureRectReady) {
+                // TODO(Core): convert Syphon to TEXTURE_2D or ship a rect extension path.
+                qWarning("GlPainter: TextureRectangle draw skipped (no rect program)");
+                return nullptr;
+            }
             prog = &m_textureRectProgram;
-            textured = true;
         } else {
-            // TODO(Core): provide a Core-safe rectangle path or convert Syphon to TEXTURE_2D.
-            // Under Compatibility without a rect program, skip shader draw rather than wrong UV space.
-            qWarning("GlPainter: TextureRectangle draw skipped (no rect program)");
-            return;
+            prog = &m_textureProgram;
         }
     }
 
     prog->bind();
     applyUniforms(prog, textured);
+    return prog;
+}
+
+void GlPainter::flushImmediate(GLenum drawMode, const QVector<float> &verts, int vertexCount)
+{
+    const bool textured = (m_textureTarget != TextureNone) && (m_textureId != 0);
+    QOpenGLShaderProgram *prog = bindProgramFor(drawMode, textured);
+    if (!prog)
+        return;
 
     if (textured) {
         prog->setUniformValue("uTexture", 0);
@@ -544,7 +605,6 @@ void GlPainter::flushImmediate(GLenum drawMode, const QVector<float> &verts, int
     m_dynamicVbo.allocate(bytes);
     m_dynamicVbo.write(0, verts.constData(), bytes);
 
-    glLineWidth(m_lineWidth);
     glDrawArrays(drawMode, 0, vertexCount);
 
     m_dynamicVbo.release();
@@ -571,6 +631,9 @@ void GlPainter::applyUniforms(QOpenGLShaderProgram *prog, bool textured) const
         return;
     prog->setUniformValue("uMVP", mvp());
     prog->setUniformValue("uColor", m_color[0], m_color[1], m_color[2], m_color[3]);
+    // Wide-line program only; silently ignored (location -1) by the others.
+    prog->setUniformValue("uViewport", m_viewportSize);
+    prog->setUniformValue("uLineWidthPx", m_lineWidth);
 }
 
 void GlPainter::bindVertexLayout()

@@ -22,6 +22,7 @@
 
 #include <QColor>
 #include <QMatrix4x4>
+#include <QVector2D>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -91,6 +92,11 @@ public:
     QOpenGLShaderProgram *textureRectProgram() { return m_textureRectReady ? &m_textureRectProgram : nullptr; }
     void applyUniforms(QOpenGLShaderProgram *prog, bool textured) const;
 
+    // Binds the right program for a draw (wide-line GS for line modes with
+    // width > 1, texture programs when textured) and applies uniforms.
+    // Returns nullptr if the draw should be skipped.
+    QOpenGLShaderProgram *bindProgramFor(GLenum drawMode, bool textured);
+
     // Bind dynamic VAO attrib layout (pos @0, uv @1) for callers that share the VBO format.
     void bindVertexLayout();
 
@@ -114,6 +120,7 @@ private:
     bool m_ready;
     bool m_inFrame;
     bool m_textureRectReady;
+    bool m_wideLineReady;
     bool m_immActive;
     GLenum m_immMode;
     ImmVertex m_immCurrent;
@@ -130,6 +137,8 @@ private:
     QOpenGLShaderProgram m_colorProgram;
     QOpenGLShaderProgram m_textureProgram;
     QOpenGLShaderProgram m_textureRectProgram;
+    QOpenGLShaderProgram m_wideLineProgram;
+    QVector2D m_viewportSize;
     QOpenGLBuffer m_dynamicVbo;
     QOpenGLVertexArrayObject m_dynamicVao;
 };
