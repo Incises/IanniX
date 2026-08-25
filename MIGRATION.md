@@ -25,7 +25,7 @@ verified clean by a full rebuild with clang against the current source tree.
 11. [QTextCodec (removed in Qt6)](#11-qtextcodec-removed-in-qt6) ✅
 12. [QRegExp to QRegularExpression](#12-qregexp-to-qregularexpression) ✅
 13. [Qt4 preprocessor branches](#13-qt4-preprocessor-branches) ✅
-14. [OpenGL immediate mode and QGLWidget](#14-opengl-immediate-mode-and-qglwidget)
+14. [OpenGL immediate mode and QGLWidget](#14-opengl-immediate-mode-and-qglwidget) ✅ B
 15. [std::auto_ptr to std::unique_ptr](#15-stdauto_ptr-to-stdunique_ptr) ✅
 16. [register storage class](#16-register-storage-class) ✅
 17. [SIGNAL/SLOT macros to function pointers](#17-signalslot-macros-to-function-pointers) ✅
@@ -241,31 +241,53 @@ been removed.  Qt5 code paths are now unconditional.
 
 ## 14. OpenGL immediate mode and QGLWidget
 
-**Status: TODO — major rendering rewrite**
+**Status: DONE (B-tier) — C-tier batching deferred**
 
-The `QGLWidget` dead-code paths have been removed.  The active `QOpenGLWidget`
-path still uses legacy OpenGL 1.x fixed-function pipeline throughout.
+The `QGLWidget` dead-code paths have been removed.  Compiled drawing goes through
+`GlPainter` / `GlMesh` on **OpenGL 3.3 CoreProfile**.  Fixed-function dual-write
+has been removed.  Remaining work is C-tier batching / Syphon TEXTURE_2D polish,
+not a Qt6 API blocker.
 
-### Files with glBegin/glEnd
+### B-tier (landed — Core 3.3)
 
-| File | Occurrences |
-|------|-------------|
-| `render/abstractionsgl.cpp` | 4 blocks (lines 634, 652, 661, 675) |
-| `objects/nxcursor.cpp` | 13+ blocks |
-| `objects/nxcurve.cpp` | multiple |
-| `objects/nxtrigger.cpp` | multiple |
-| `render/uirender.cpp` | ~8 blocks |
-| `render/uirenderpreview.cpp` | 1 block |
-| `interfaces/extkinectmanager.cpp` | 2 blocks |
+| Piece | Role |
+|-------|------|
+| `render/gl/glpainter.h/.cpp` | Per-context paint helper: GLSL 330 **core** color + textured shaders, optional `sampler2DRect` (ARB extension), CPU-only matrix stack, immediate batcher |
+| `render/gl/glmesh.h/.cpp` | Cached VBO/VAO geometry (replaces display lists) |
+| `render/gl/glgeom.h` | CPU cubic Bezier sampling + line-stipple dash approximation |
+| `misc/application.cpp` / preview | OpenGL **3.3 CoreProfile** + MSAA samples |
+| `UiRender` | Camera, groups, background, grid, selection, `renderText` via GlPainter |
+| `abstractionsgl` | `drawRect` + color helpers via GlPainter (uniform color; mid-quad gradients deferred to C) |
+| `nxcurve` / `nxcursor` / `nxtrigger` | Display lists → `GlMesh`; all paint via GlPainter |
+| `uirenderpreview` | Own GlPainter context; textured letterbox quad |
+| `extkinectmanager` | Dead `paint()` early-return; body uses GlPainter for Kinect builds |
 
-OpenGL display lists (`glGenLists`, `glNewList`, `glCallList`) are also used in
-`nxcursor.cpp`, `nxcurve.cpp`, and `nxtrigger.cpp`.
+### Line stipple
+
+Former `glLineStipple` is approximated on the CPU (`GlGeom::dashifyStrip`) using
+world-space segment length (not pixel stipple). Pattern `0xFFFF` stays solid.
+Good enough for B; a shader dash can replace it later if needed.
+
+### Bezier
+
+`glMap1f` / `glEvalCoord1f` replaced by CPU cubic sampling (`step = 0.02`) into
+`GL_LINES` mesh data.
+
+### Syphon
+
+`TextureRectangle` + optional core+`GL_ARB_texture_rectangle` shader. If that
+program fails to compile, Syphon background draws are skipped. Prefer converting
+Syphon to `GL_TEXTURE_2D` on macOS when revisiting that path.
+
+### Remaining (C-tier and polish)
+
+1. **C-tier:** batch multiple `GlMesh` draws / per-vertex color gradients in `drawRect`.
+2. Syphon → `TEXTURE_2D` (or keep ARB rect where available).
+3. Visual regression pass against Examples (stipple, bezier density, MSAA).
 
 ### Migration path
 
-Replace with `QOpenGLBuffer` + `QOpenGLShaderProgram` + `QOpenGLVertexArrayObject`.
-Suggested order: render layer first (`uirender`, `abstractionsgl`), then objects
-(`nxcurve`, `nxcursor`, `nxtrigger`).
+B draw-site migration + Core flip done for compiled sources. Next: C-tier batching.
 
 ---
 
@@ -400,7 +422,7 @@ KSyntaxHighlighting definition name) at construction time.
 | 11 | QTextCodec | Low | **Yes** | ✅ DONE |
 | 12 | QRegExp | Medium | **Yes** | ✅ DONE |
 | 13 | Qt4 branches | Medium | No | ✅ DONE |
-| 14 | OpenGL legacy | High | Partial | TODO |
+| 14 | OpenGL legacy | High | Softened | ✅ B DONE — C-tier deferred |
 | 15 | std::auto_ptr | Low | Compiler err | ✅ DONE |
 | 16 | register keyword | Low | Compiler err | ✅ DONE |
 | 17 | SIGNAL/SLOT macros | Low | No | ✅ DONE |
@@ -429,21 +451,16 @@ All fixed; the full rebuild is now warning-free:
 
 | Item | File(s) | Effort |
 |------|---------|--------|
-| OpenGL legacy (§14) | 7 files, ~35 `glBegin` blocks + display lists | Large — only remaining Qt6 blocker |
+| OpenGL C-tier (§14) | mesh batching, per-vertex gradients, Syphon TEXTURE_2D | Medium–Large |
 | Vendored `interfaces/artnet/` (§20) | unused — delete or wire up | Small |
 | Vendored `gui/qffmpeg/` (§20) | optional `USE_FFMPEG` feature | High if kept |
 
 ### Recommended phases
 
-**Phase 1 — DONE.** All small Qt6 blockers and deprecation warnings are fixed;
-the Qt5 build compiles with zero warnings.  SIGNAL/SLOT macros (§17) are also
-converted to function-pointer form.
+**Phase 1 — DONE.** Deprecation cleanup + SIGNAL/SLOT modernization; warning-free Qt5 build.
 
-**Phase 2 — OpenGL modernization (§14):**
-Replace immediate-mode rendering with `QOpenGLBuffer` + `QOpenGLShaderProgram`
-+ `QOpenGLVertexArrayObject`.  Render layer first (`uirender`,
-`abstractionsgl`), then objects (`nxcurve`, `nxcursor`, `nxtrigger`).  This is
-the only large item still blocking Qt6.
+**Phase 2 — DONE (B).** OpenGL Core 3.3 via `GlPainter` / `GlMesh` / `GlGeom`; all compiled draw sites migrated; no fixed-function dual-write.
 
-**Phase 3 — polish:**
-Decide the fate of `artnet/` and `qffmpeg/` (§20).
+**Phase 3 — C-tier + polish:**
+Batch `GlMesh` draws, restore `drawRect` gradients if needed, Syphon TEXTURE_2D;
+decide fate of `artnet/` and `qffmpeg/` (§20).

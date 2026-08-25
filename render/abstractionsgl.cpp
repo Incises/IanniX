@@ -317,8 +317,6 @@ void OpenGlTexture::loadTexte(const QString &_texte, const OpenGlFont &_texteFon
 bool OpenGlTexture::pushTexture() {
     if((!init) && (!filename.isEmpty()) && (filename != "syphon")) {
         if(filename == "glpixels") {
-            //Génération de la texture
-            glEnable(GL_TEXTURE_2D);
             if(!texture)
                 glGenTextures(1, &texture);
             glBindTexture  (GL_TEXTURE_2D, texture);
@@ -326,9 +324,8 @@ bool OpenGlTexture::pushTexture() {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//GL_NEAREST_MIPMAP_LINEAR
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.width(), size.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texturePixels.data());
-            glDisable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
         else {
             QImage sourceImage;
@@ -360,7 +357,6 @@ bool OpenGlTexture::pushTexture() {
                 sourceImage = imageBlurred(sourceImage, sourceImage.rect(), blurKernelSize);
 
             //Génération de la texture
-            glEnable(GL_TEXTURE_2D);
             QString verboseTexte = "";
             if(!texture) {
                 glGenTextures(1, &texture);
@@ -371,7 +367,6 @@ bool OpenGlTexture::pushTexture() {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//GL_NEAREST_MIPMAP_LINEAR
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
             const GLubyte *pixels = nullptr;
 #ifdef USE_GLWIDGET
@@ -382,42 +377,25 @@ bool OpenGlTexture::pushTexture() {
 #endif
             if(filename == "manual") {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB , size.width(), size.height(), 0, GL_RGB , GL_UNSIGNED_BYTE, pixels);
-                //if(!verboseTexte.isEmpty())    qDebug("%s (GL_RGB - GL_UNSIGNED_BYTE / %f - %f)", qPrintable(verboseTexte), size.width(), size.height());
             }
             else if(filename == "textureFloat") {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.width(), size.height(), 0, GL_RGBA, GL_DOUBLE, 0);
-                //if(!verboseTexte.isEmpty())    qDebug("%s (GL_RGBA - GL_DOUBLE / %f - %f)", qPrintable(verboseTexte), size.width(), size.height());
             }
             else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.width(), size.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-                //if(!verboseTexte.isEmpty())    qDebug("%s (GL_RGBA - GL_UNSIGNED_BYTE / %f - %f)", qPrintable(verboseTexte), size.width(), size.height());
             }
-            glDisable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            Q_UNUSED(verboseTexte);
         }
         init = true;
     }
-    if(init) {
-        if(isSyphon()) {
-            glEnable(GL_TEXTURE_RECTANGLE_ARB);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
-        }
-        else {
-            glEnable(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, texture);
-        }
-        /*
-        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        */
-    }
-
+    // Binding for draws goes through GlPainter::bindTexture; pushTexture only ensures upload.
     return init;
 }
 bool OpenGlTexture::popTexture() const {
-    if(init) {
-        if(isSyphon())    glDisable(GL_TEXTURE_RECTANGLE_ARB);
-        else              glDisable(GL_TEXTURE_2D);
+    if (GlPainter *g = GlPainter::current()) {
+        if (g->isReady())
+            g->unbindTexture();
     }
     return init;
 }
@@ -633,25 +611,32 @@ void OpenGlDrawing::drawRect(const QRectF &rect, const OpenGlColors &colors, Ope
                 }
             }
 
-            glBegin(GL_QUADS);
+            GlPainter *g = GlPainter::current();
+            if (!g || !g->isReady())
+                continue;
 
+            // Uniform color (start); mid-quad gradients deferred to C-tier per-vertex color.
             colors.glColorStart(alpha, selected);
-            if(texture)  glTexCoord2f(currentTextureRect.topLeft().x(), currentTextureRect.topLeft().y());
-            glVertex2f(currentTargetRect.topLeft()    .x(), currentTargetRect.topLeft()    .y());
-
-            if(colors.colorDirection(selected))  colors.glColorEnd(alpha, selected);
-            if(texture)  glTexCoord2f(currentTextureRect.topRight().x(), currentTextureRect.topRight().y());
-            glVertex2f(currentTargetRect.topRight()   .x(), currentTargetRect.topRight()   .y());
-
-            colors.glColorEnd(alpha, selected);
-            if(texture)  glTexCoord2f(currentTextureRect.bottomRight().x(), currentTextureRect.bottomRight().y());
-            glVertex2f(currentTargetRect.bottomRight().x(), currentTargetRect.bottomRight().y());
-
-            if(colors.colorDirection(selected))  colors.glColorStart(alpha, selected);
-            if(texture)  glTexCoord2f(currentTextureRect.bottomLeft().x(), currentTextureRect.bottomLeft().y());
-            glVertex2f(currentTargetRect.bottomLeft() .x(), currentTargetRect.bottomLeft() .y());
-
-            glEnd();
+            if (texture) {
+                g->bindTexture(texture->isSyphon() ? GlPainter::TextureRectangle : GlPainter::Texture2D,
+                               texture->texture);
+            }
+            g->begin(GL_QUADS);
+            if (texture)
+                g->texCoord(float(currentTextureRect.topLeft().x()), float(currentTextureRect.topLeft().y()));
+            g->vertex(float(currentTargetRect.topLeft().x()), float(currentTargetRect.topLeft().y()));
+            if (texture)
+                g->texCoord(float(currentTextureRect.topRight().x()), float(currentTextureRect.topRight().y()));
+            g->vertex(float(currentTargetRect.topRight().x()), float(currentTargetRect.topRight().y()));
+            if (texture)
+                g->texCoord(float(currentTextureRect.bottomRight().x()), float(currentTextureRect.bottomRight().y()));
+            g->vertex(float(currentTargetRect.bottomRight().x()), float(currentTargetRect.bottomRight().y()));
+            if (texture)
+                g->texCoord(float(currentTextureRect.bottomLeft().x()), float(currentTextureRect.bottomLeft().y()));
+            g->vertex(float(currentTargetRect.bottomLeft().x()), float(currentTargetRect.bottomLeft().y()));
+            g->end();
+            if (texture)
+                g->unbindTexture();
         }
         if(texture)
             texture->popTexture();
@@ -659,23 +644,18 @@ void OpenGlDrawing::drawRect(const QRectF &rect, const OpenGlColors &colors, Ope
 
     //Bordure
     if((colors.borderNeed()) & (!colors.isBorderTransparent())) {
-        glLineWidth(OpenGlDrawing::dpi * colors.borderWidth(selected));
-        glBegin(GL_LINE_LOOP);
-
-        colors.glBorderStart(alpha, selected);
-        glVertex2f(targetRect.topLeft()    .x(), targetRect.topLeft()    .y());
-
-        if(colors.borderDirection(selected))  colors.glBorderEnd(alpha, selected);
-        glVertex2f(targetRect.topRight()   .x(), targetRect.topRight()   .y());
-
-        colors.glBorderEnd(alpha, selected);
-        glVertex2f(targetRect.bottomRight().x(), targetRect.bottomRight().y());
-
-        if(colors.borderDirection(selected))  colors.glBorderStart(alpha, selected);
-        glVertex2f(targetRect.bottomLeft() .x(), targetRect.bottomLeft() .y());
-
-        glEnd();
-        glLineWidth(OpenGlDrawing::dpi);
+        GlPainter *g = GlPainter::current();
+        if (g && g->isReady()) {
+            g->setLineWidth(float(OpenGlDrawing::dpi * colors.borderWidth(selected)));
+            colors.glBorderStart(alpha, selected);
+            g->begin(GL_LINE_LOOP);
+            g->vertex(float(targetRect.topLeft().x()), float(targetRect.topLeft().y()));
+            g->vertex(float(targetRect.topRight().x()), float(targetRect.topRight().y()));
+            g->vertex(float(targetRect.bottomRight().x()), float(targetRect.bottomRight().y()));
+            g->vertex(float(targetRect.bottomLeft().x()), float(targetRect.bottomLeft().y()));
+            g->end();
+            g->setLineWidth(float(OpenGlDrawing::dpi));
+        }
     }
 }
 

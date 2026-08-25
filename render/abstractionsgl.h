@@ -18,6 +18,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #endif
+#include "gl/glpainter.h"
 #ifdef VLC_INSTALLED
 #include "drivers/vlc.h"
 #endif
@@ -214,8 +215,18 @@ public:
 
 public:
     inline void glColor     (qreal alpha = 1) const {  glColorStart(alpha); }
-    inline void glColorStart(qreal alpha = 1) const {  glColor4f(at(0).redF(), at(0).greenF(), at(0).blueF(), at(0).alphaF() * alpha);  }
-    inline void glColorEnd  (qreal alpha = 1) const {  glColor4f(at(1).redF(), at(1).greenF(), at(1).blueF(), at(1).alphaF() * alpha);  }
+    inline void glColorStart(qreal alpha = 1) const {
+        if (GlPainter *g = GlPainter::current()) {
+            if (g->isReady()) {
+                g->setColor(float(at(0).redF()), float(at(0).greenF()), float(at(0).blueF()), float(at(0).alphaF() * alpha));
+                return;
+            }
+        }
+    }
+    inline void glColorEnd  (qreal alpha = 1) const {
+        // B-tier: uniform color only; gradients use start color (C-tier: per-vertex color).
+        glColorStart(alpha);
+    }
 };
 
 class OpenGlColors {
@@ -351,16 +362,26 @@ public:
 
 private:
     inline void glColorIndex (qint8 index = 0, qreal alpha = 1, qreal selected = 0) const  {
-        glColor4f(   selectedColor.at(index).redF()   * selected + unselectedColor.at(index).redF()   * (1 - selected),
-                     selectedColor.at(index).greenF() * selected + unselectedColor.at(index).greenF() * (1 - selected),
-                     selectedColor.at(index).blueF()  * selected + unselectedColor.at(index).blueF()  * (1 - selected),
-                     (selectedColor.at(index).alphaF() * selected + unselectedColor.at(index).alphaF() * (1 - selected)) * alpha);
+        if (GlPainter *g = GlPainter::current()) {
+            if (g->isReady()) {
+                g->setColor(
+                    float(selectedColor.at(index).redF()   * selected + unselectedColor.at(index).redF()   * (1 - selected)),
+                    float(selectedColor.at(index).greenF() * selected + unselectedColor.at(index).greenF() * (1 - selected)),
+                    float(selectedColor.at(index).blueF()  * selected + unselectedColor.at(index).blueF()  * (1 - selected)),
+                    float((selectedColor.at(index).alphaF() * selected + unselectedColor.at(index).alphaF() * (1 - selected)) * alpha));
+            }
+        }
     }
     inline void glBorderIndex(qint8 index = 0, qreal alpha = 1, qreal selected = 0) const  {
-        glColor4f(   selectedBorder.at(index).redF()   * selected + unselectedBorder.at(index).redF()   * (1 - selected),
-                     selectedBorder.at(index).greenF() * selected + unselectedBorder.at(index).greenF() * (1 - selected),
-                     selectedBorder.at(index).blueF()  * selected + unselectedBorder.at(index).blueF()  * (1 - selected),
-                     (selectedBorder.at(index).alphaF() * selected + unselectedBorder.at(index).alphaF() * (1 - selected)) * alpha);
+        if (GlPainter *g = GlPainter::current()) {
+            if (g->isReady()) {
+                g->setColor(
+                    float(selectedBorder.at(index).redF()   * selected + unselectedBorder.at(index).redF()   * (1 - selected)),
+                    float(selectedBorder.at(index).greenF() * selected + unselectedBorder.at(index).greenF() * (1 - selected)),
+                    float(selectedBorder.at(index).blueF()  * selected + unselectedBorder.at(index).blueF()  * (1 - selected)),
+                    float((selectedBorder.at(index).alphaF() * selected + unselectedBorder.at(index).alphaF() * (1 - selected)) * alpha));
+            }
+        }
     }
 
 };

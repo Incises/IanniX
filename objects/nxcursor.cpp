@@ -20,11 +20,13 @@
 */
 
 #include "nxcursor.h"
+#include "render/gl/glpainter.h"
+#include "render/gl/glgeom.h"
 
 NxCursor::NxCursor(ApplicationCurrent *parent, QTreeWidgetItem *ccParentItem) :
     NxObject(parent, ccParentItem) {
     setText(0, tr("CURSOR"));
-    glListCursor = glGenLists(1);
+    meshEllipsoid.setDirty(true);
     curve = 0;
     nextTimeOld = 0;
     timeOld = 0;
@@ -72,7 +74,7 @@ void NxCursor::initializeCustom() {
     setMessagePatterns("20," + Application::defaultMessageCursor.val());
 }
 NxCursor::~NxCursor() {
-    glDeleteLists(glListCursor, 1);
+    meshEllipsoid.destroy();
 }
 void NxCursor::setTime(qreal delta) {
     previousPreviousCursorReliable = previousCursorReliable;
@@ -306,7 +308,11 @@ void NxCursor::paint() {
         if(!Application::allowSelectionCursors)
             color.setAlphaF(color.alphaF()/3);
 
-        glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+        GlPainter *g = GlPainter::current();
+        if (!g || !g->isReady())
+            return;
+
+        g->setColor(color);
 
         //Cursor chasse-neige
         if((0.0F <= time) && (time <= 1.0F) && (start.count()) && (start.at(nbLoop % start.count()) != 0)) {
@@ -331,110 +337,122 @@ void NxCursor::paint() {
                 if((texture) && (texture->loaded) && (texture->mapping.width() != 0 ) && (texture->mapping.height() != 0)) {
                     textureOk = true;
 
-                    glPushMatrix();
-                    glTranslatef(cursorPos.x(), cursorPos.y(), cursorPos.z());
-                    glRotatef(cursorAngle.z(), 0, 0, 1);
-                    glRotatef(cursorAngle.y(), 0, 1, 0);
-                    glRotatef(cursorAngle.x(), 1, 0, 0);
+                    g->pushMatrix();
+                    g->translate(float(cursorPos.x()), float(cursorPos.y()), float(cursorPos.z()));
+                    g->rotate(float(cursorAngle.z()), 0, 0, 1);
+                    g->rotate(float(cursorAngle.y()), 0, 1, 0);
+                    g->rotate(float(cursorAngle.x()), 1, 0, 0);
 
+                    const qreal widthRatio = width * texture->originalSize.width() / texture->originalSize.height();
                     if(texture->isSyphon) {
-                        glEnable(GL_TEXTURE_RECTANGLE_ARB);
-                        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture->texture);
-                        glBegin(GL_QUADS);
-                        qreal widthRatio = width * texture->originalSize.width() / texture->originalSize.height();
-                        glTexCoord2d(0, 0); glVertex3f(widthRatio * texture->mapping.left(),  width/2 * texture->mapping.bottom(), 0);
-                        glTexCoord2d(texture->originalSize.width(), 0); glVertex3f(0, width/2 * texture->mapping.bottom(), 0);
-                        glTexCoord2d(texture->originalSize.width(), texture->originalSize.height()); glVertex3f(0, width/2 * texture->mapping.top(), 0);
-                        glTexCoord2d(0, texture->originalSize.height()); glVertex3f(widthRatio * texture->mapping.left(),  width/2 * texture->mapping.top(), 0);
-                        glEnd();
-                        glDisable(GL_TEXTURE_RECTANGLE_ARB);
+                        g->bindTexture(GlPainter::TextureRectangle, texture->texture);
+                        g->begin(GL_QUADS);
+                        g->texCoord(0, 0);
+                        g->vertex(float(widthRatio * texture->mapping.left()), float(width/2 * texture->mapping.bottom()));
+                        g->texCoord(float(texture->originalSize.width()), 0);
+                        g->vertex(0, float(width/2 * texture->mapping.bottom()));
+                        g->texCoord(float(texture->originalSize.width()), float(texture->originalSize.height()));
+                        g->vertex(0, float(width/2 * texture->mapping.top()));
+                        g->texCoord(0, float(texture->originalSize.height()));
+                        g->vertex(float(widthRatio * texture->mapping.left()), float(width/2 * texture->mapping.top()));
+                        g->end();
+                        g->unbindTexture();
                     }
                     else {
-                        glEnable(GL_TEXTURE_2D);
-                        glBindTexture(GL_TEXTURE_2D, texture->texture);
-                        qreal widthRatio = width * texture->originalSize.width() / texture->originalSize.height();
-                        glBegin(GL_QUADS);
-                        glTexCoord2d(0, 0); glVertex3f(widthRatio * texture->mapping.left(),  width/2 * texture->mapping.bottom(), 0);
-                        glTexCoord2d(1, 0); glVertex3f(0, width/2 * texture->mapping.bottom(), 0);
-                        glTexCoord2d(1, 1); glVertex3f(0, width/2 * texture->mapping.top(), 0);
-                        glTexCoord2d(0, 1); glVertex3f(widthRatio * texture->mapping.left(),  width/2 * texture->mapping.top(), 0);
-                        glEnd();
-                        glDisable(GL_TEXTURE_2D);
+                        g->bindTexture(GlPainter::Texture2D, texture->texture);
+                        g->begin(GL_QUADS);
+                        g->texCoord(0, 0);
+                        g->vertex(float(widthRatio * texture->mapping.left()), float(width/2 * texture->mapping.bottom()));
+                        g->texCoord(1, 0);
+                        g->vertex(0, float(width/2 * texture->mapping.bottom()));
+                        g->texCoord(1, 1);
+                        g->vertex(0, float(width/2 * texture->mapping.top()));
+                        g->texCoord(0, 1);
+                        g->vertex(float(widthRatio * texture->mapping.left()), float(width/2 * texture->mapping.top()));
+                        g->end();
+                        g->unbindTexture();
                     }
 
-                    glEnd();
-                    glPopMatrix();
+                    g->popMatrix();
                 }
             }
             if(!textureOk) {
-                //Cursor
-                glLineWidth(OpenGlDrawing::dpi * size);
-                glEnable(GL_LINE_STIPPLE);
-                glLineStipple(lineFactor, lineStipple);
+                //Cursor — CPU dash approximation of former glLineStipple
+                g->setLineWidth(float(OpenGlDrawing::dpi * size));
                 if(depth == 0) {
                     if(size > 0) {
-                        glBegin(GL_LINE_STRIP);
-                        glVertex3f(cursorPoly.at(1).x(), cursorPoly.at(1).y(), cursorPoly.at(1).z());
-                        glVertex3f(cursorPoly.at(2).x(), cursorPoly.at(2).y(), cursorPoly.at(2).z());
-                        glEnd();
+                        QVector<float> strip;
+                        GlGeom::appendXYZ(strip, float(cursorPoly.at(1).x()), float(cursorPoly.at(1).y()), float(cursorPoly.at(1).z()));
+                        GlGeom::appendXYZ(strip, float(cursorPoly.at(2).x()), float(cursorPoly.at(2).y()), float(cursorPoly.at(2).z()));
+                        QVector<float> lines;
+                        GlGeom::dashifyStrip(lines, strip, int(lineFactor), lineStipple, false);
+                        g->begin(GL_LINES);
+                        for (int i = 0; i + 5 < lines.size(); i += 6) {
+                            g->vertex(lines[i], lines[i+1], lines[i+2]);
+                            g->vertex(lines[i+3], lines[i+4], lines[i+5]);
+                        }
+                        g->end();
                     }
                 }
                 else {
-                    glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF()/5);
-                    glBegin(GL_QUADS);
-                    glVertex3f(cursorPoly.at(0).x(), cursorPoly.at(0).y(), cursorPoly.at(0).z());
-                    glVertex3f(cursorPoly.at(1).x(), cursorPoly.at(1).y(), cursorPoly.at(1).z());
-                    glVertex3f(cursorPoly.at(2).x(), cursorPoly.at(2).y(), cursorPoly.at(2).z());
-                    glVertex3f(cursorPoly.at(3).x(), cursorPoly.at(3).y(), cursorPoly.at(3).z());
-                    glEnd();
+                    g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), float(color.alphaF()/5));
+                    g->begin(GL_QUADS);
+                    g->vertex(float(cursorPoly.at(0).x()), float(cursorPoly.at(0).y()), float(cursorPoly.at(0).z()));
+                    g->vertex(float(cursorPoly.at(1).x()), float(cursorPoly.at(1).y()), float(cursorPoly.at(1).z()));
+                    g->vertex(float(cursorPoly.at(2).x()), float(cursorPoly.at(2).y()), float(cursorPoly.at(2).z()));
+                    g->vertex(float(cursorPoly.at(3).x()), float(cursorPoly.at(3).y()), float(cursorPoly.at(3).z()));
+                    g->end();
 
                     if(size > 0) {
-                        glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
-                        glBegin(GL_LINE_LOOP);
-                        glVertex3f(cursorPoly.at(0).x(), cursorPoly.at(0).y(), cursorPoly.at(0).z());
-                        glVertex3f(cursorPoly.at(1).x(), cursorPoly.at(1).y(), cursorPoly.at(1).z());
-                        glVertex3f(cursorPoly.at(2).x(), cursorPoly.at(2).y(), cursorPoly.at(2).z());
-                        glVertex3f(cursorPoly.at(3).x(), cursorPoly.at(3).y(), cursorPoly.at(3).z());
-                        glEnd();
+                        g->setColor(color);
+                        QVector<float> strip;
+                        for (int i = 0; i < 4; ++i)
+                            GlGeom::appendXYZ(strip, float(cursorPoly.at(i).x()), float(cursorPoly.at(i).y()), float(cursorPoly.at(i).z()));
+                        QVector<float> lines;
+                        GlGeom::dashifyStrip(lines, strip, int(lineFactor), lineStipple, true);
+                        g->begin(GL_LINES);
+                        for (int i = 0; i + 5 < lines.size(); i += 6) {
+                            g->vertex(lines[i], lines[i+1], lines[i+2]);
+                            g->vertex(lines[i+3], lines[i+4], lines[i+5]);
+                        }
+                        g->end();
                     }
                 }
-                glDisable(GL_LINE_STIPPLE);
-                glLineWidth(OpenGlDrawing::dpi);
+                g->setLineWidth(float(OpenGlDrawing::dpi));
 
                 //Cursor reader
-                glPushMatrix();
-                glTranslatef(cursorPos.x(), cursorPos.y(), cursorPos.z());
-                glRotatef(cursorAngle.z(), 0, 0, 1);
-                glRotatef(cursorAngle.y(), 0, 1, 0);
-                glRotatef(cursorAngle.x(), 1, 0, 0);
+                g->pushMatrix();
+                g->translate(float(cursorPos.x()), float(cursorPos.y()), float(cursorPos.z()));
+                g->rotate(float(cursorAngle.z()), 0, 0, 1);
+                g->rotate(float(cursorAngle.y()), 0, 1, 0);
+                g->rotate(float(cursorAngle.x()), 1, 0, 0);
                 qreal size2 = Render::objectSize / 2 * qMin(qreal(1.), width);
-                glBegin(GL_TRIANGLE_FAN);
-                glLineWidth(OpenGlDrawing::dpi * 2);
+                g->setLineWidth(float(OpenGlDrawing::dpi * 2));
+                g->begin(GL_TRIANGLE_FAN);
                 if(hasActivity) {
-                    if((time - timeOld) >= 0)  glVertex3f(size2, 0, 0);
-                    else                       glVertex3f(-size2, 0, 0);
+                    if((time - timeOld) >= 0)  g->vertex(float(size2), 0, 0);
+                    else                       g->vertex(float(-size2), 0, 0);
                 }
-                glVertex3f(0, -size2, 0);
-                glVertex3f(0, size2, 0);
-                glLineWidth(OpenGlDrawing::dpi);
-                glEnd();
-                glPopMatrix();
+                g->vertex(0, float(-size2), 0);
+                g->vertex(0, float(size2), 0);
+                g->end();
+                g->setLineWidth(float(OpenGlDrawing::dpi));
+                g->popMatrix();
 
                 //Special feature YEOSU
                 if((true) && ((cursorPos.sx()) || (cursorPos.sy()) || (cursorPos.sz()))) {
-                    glPushMatrix();
-                    glTranslatef(cursorPos.x(), cursorPos.y(), cursorPos.z());
-                    glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF() / 8.F);
+                    g->pushMatrix();
+                    g->translate(float(cursorPos.x()), float(cursorPos.y()), float(cursorPos.z()));
+                    g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), float(color.alphaF() / 8.F));
                     if(curve)
-                        glLineWidth(OpenGlDrawing::dpi * curve->getSize());
+                        g->setLineWidth(float(OpenGlDrawing::dpi * curve->getSize()));
                     else
-                        glLineWidth(OpenGlDrawing::dpi);
+                        g->setLineWidth(float(OpenGlDrawing::dpi));
 
-                    if((glListRecreate) || (Render::forceLists)) {
-                        glNewList(glListCursor, GL_COMPILE_AND_EXECUTE);
+                    if((glListRecreate) || (Render::forceLists) || meshEllipsoid.isDirty() || meshEllipsoid.isEmpty()) {
+                        QVector<float> strip;
                         qreal lats = 40, longs = 40;
                         qreal rx = cursorPos.sx(), ry = cursorPos.sy(), rz = cursorPos.sz();
-                        glBegin(GL_LINE_STRIP);
                         for(quint16 i = 0; i <= lats; i++) {
                             qreal lat0 = M_PI * (-0.5 + (qreal)(i - 1) / lats);
                             qreal lat1 = M_PI * (-0.5 + (qreal)(i    ) / lats);
@@ -445,19 +463,15 @@ void NxCursor::paint() {
                                 qreal lng = 2 * M_PI * (qreal)(j - 1) / longs;
                                 qreal x = qCos(lng) * rx;
                                 qreal y = qSin(lng) * ry;
-                                glNormal3f(x * zr0, y * zr0, z0);
-                                glVertex3f(x * zr0, y * zr0, z0);
-                                glNormal3f(x * zr1, y * zr1, z1);
-                                glVertex3f(x * zr1, y * zr1, z1);
+                                GlGeom::appendXYZ(strip, float(x * zr0), float(y * zr0), float(z0));
+                                GlGeom::appendXYZ(strip, float(x * zr1), float(y * zr1), float(z1));
                             }
                         }
-                        glEnd();
-                        glEndList();
+                        meshEllipsoid.upload(GL_LINE_STRIP, strip, strip.size() / 3);
                         glListRecreate = false;
                     }
-                    else
-                        glCallList(glListCursor);
-                    glPopMatrix();
+                    meshEllipsoid.draw(g);
+                    g->popMatrix();
                 }
 
             }
@@ -465,15 +479,15 @@ void NxCursor::paint() {
 
             //Debug
             if(false) {
-                glColor4f(0, 0, 0, 1);
-                glBegin(GL_LINE_STRIP);
-                glVertex3f(cursorPoly.at(1).x(), cursorPoly.at(1).y(), cursorPoly.at(1).z());
-                glVertex3f(cursorPoly.at(2).x(), cursorPoly.at(2).y(), cursorPoly.at(2).z());
-                glEnd();
-                glBegin(GL_LINE_STRIP);
-                glVertex3f(cursorPolyOld.at(1).x(), cursorPolyOld.at(1).y(), cursorPolyOld.at(1).z());
-                glVertex3f(cursorPolyOld.at(2).x(), cursorPolyOld.at(2).y(), cursorPolyOld.at(2).z());
-                glEnd();
+                g->setColor(0, 0, 0, 1);
+                g->begin(GL_LINE_STRIP);
+                g->vertex(float(cursorPoly.at(1).x()), float(cursorPoly.at(1).y()), float(cursorPoly.at(1).z()));
+                g->vertex(float(cursorPoly.at(2).x()), float(cursorPoly.at(2).y()), float(cursorPoly.at(2).z()));
+                g->end();
+                g->begin(GL_LINE_STRIP);
+                g->vertex(float(cursorPolyOld.at(1).x()), float(cursorPolyOld.at(1).y()), float(cursorPolyOld.at(1).z()));
+                g->vertex(float(cursorPolyOld.at(2).x()), float(cursorPolyOld.at(2).y()), float(cursorPolyOld.at(2).z()));
+                g->end();
             }
 
             //Mapping area
@@ -482,36 +496,50 @@ void NxCursor::paint() {
                     boundsSource = Render::axisArea;
                     boundsSource.translate(-Render::axisCenter);
                 }
-                glPushMatrix();
-                glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF() / 2.F);
-                glLineWidth(OpenGlDrawing::dpi);
-                glEnable(GL_LINE_STIPPLE);
-                glLineStipple(1, 255);
-                glBegin(GL_LINE_LOOP);
-                glVertex3f(boundsSource.topLeft().x(),     boundsSource.topLeft().y(),     boundsSource.topLeft().z());
-                glVertex3f(boundsSource.topRight().x(),    boundsSource.topRight().y(),    boundsSource.topRight().z());
-                glVertex3f(boundsSource.bottomRight().x(), boundsSource.bottomRight().y(), boundsSource.topRight().z());
-                glVertex3f(boundsSource.bottomLeft().x(),  boundsSource.bottomLeft().y(),  boundsSource.topLeft().z());
-                glEnd();
-                if(boundsSource.length() != 0) {
-                    glBegin(GL_LINE_LOOP);
-                    glVertex3f(boundsSource.topLeft().x(),     boundsSource.topLeft().y(),     boundsSource.bottomLeft().z());
-                    glVertex3f(boundsSource.topRight().x(),    boundsSource.topRight().y(),    boundsSource.bottomRight().z());
-                    glVertex3f(boundsSource.bottomRight().x(), boundsSource.bottomRight().y(), boundsSource.bottomRight().z());
-                    glVertex3f(boundsSource.bottomLeft().x(),  boundsSource.bottomLeft().y(),  boundsSource.bottomLeft().z());
-                    glEnd();
-                    glBegin(GL_LINES);
-                    glVertex3f(boundsSource.topLeft().x(),     boundsSource.topLeft().y(),     boundsSource.topLeft().z());
-                    glVertex3f(boundsSource.topLeft().x(),     boundsSource.topLeft().y(),     boundsSource.bottomLeft().z());
-                    glVertex3f(boundsSource.topRight().x(),    boundsSource.topRight().y(),    boundsSource.topRight().z());
-                    glVertex3f(boundsSource.topRight().x(),    boundsSource.topRight().y(),    boundsSource.bottomRight().z());
-                    glVertex3f(boundsSource.bottomRight().x(), boundsSource.bottomRight().y(), boundsSource.topRight().z());
-                    glVertex3f(boundsSource.bottomRight().x(), boundsSource.bottomRight().y(), boundsSource.bottomRight().z());
-                    glVertex3f(boundsSource.bottomLeft().x(),  boundsSource.bottomLeft().y(),  boundsSource.topLeft().z());
-                    glVertex3f(boundsSource.bottomLeft().x(),  boundsSource.bottomLeft().y(),  boundsSource.bottomLeft().z());
-                    glEnd();
+                g->pushMatrix();
+                g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), float(color.alphaF() / 2.F));
+                g->setLineWidth(float(OpenGlDrawing::dpi));
+                // Former glLineStipple(1, 255) — CPU dash approx
+                {
+                    QVector<float> strip;
+                    GlGeom::appendXYZ(strip, float(boundsSource.topLeft().x()), float(boundsSource.topLeft().y()), float(boundsSource.topLeft().z()));
+                    GlGeom::appendXYZ(strip, float(boundsSource.topRight().x()), float(boundsSource.topRight().y()), float(boundsSource.topRight().z()));
+                    GlGeom::appendXYZ(strip, float(boundsSource.bottomRight().x()), float(boundsSource.bottomRight().y()), float(boundsSource.topRight().z()));
+                    GlGeom::appendXYZ(strip, float(boundsSource.bottomLeft().x()), float(boundsSource.bottomLeft().y()), float(boundsSource.topLeft().z()));
+                    QVector<float> lines;
+                    GlGeom::dashifyStrip(lines, strip, 1, 255, true);
+                    g->begin(GL_LINES);
+                    for (int i = 0; i + 5 < lines.size(); i += 6) {
+                        g->vertex(lines[i], lines[i+1], lines[i+2]);
+                        g->vertex(lines[i+3], lines[i+4], lines[i+5]);
+                    }
+                    g->end();
                 }
-                glDisable(GL_LINE_STIPPLE);
+                if(boundsSource.length() != 0) {
+                    QVector<float> strip;
+                    GlGeom::appendXYZ(strip, float(boundsSource.topLeft().x()), float(boundsSource.topLeft().y()), float(boundsSource.bottomLeft().z()));
+                    GlGeom::appendXYZ(strip, float(boundsSource.topRight().x()), float(boundsSource.topRight().y()), float(boundsSource.bottomRight().z()));
+                    GlGeom::appendXYZ(strip, float(boundsSource.bottomRight().x()), float(boundsSource.bottomRight().y()), float(boundsSource.bottomRight().z()));
+                    GlGeom::appendXYZ(strip, float(boundsSource.bottomLeft().x()), float(boundsSource.bottomLeft().y()), float(boundsSource.bottomLeft().z()));
+                    QVector<float> lines;
+                    GlGeom::dashifyStrip(lines, strip, 1, 255, true);
+                    g->begin(GL_LINES);
+                    for (int i = 0; i + 5 < lines.size(); i += 6) {
+                        g->vertex(lines[i], lines[i+1], lines[i+2]);
+                        g->vertex(lines[i+3], lines[i+4], lines[i+5]);
+                    }
+                    g->end();
+                    g->begin(GL_LINES);
+                    g->vertex(float(boundsSource.topLeft().x()),     float(boundsSource.topLeft().y()),     float(boundsSource.topLeft().z()));
+                    g->vertex(float(boundsSource.topLeft().x()),     float(boundsSource.topLeft().y()),     float(boundsSource.bottomLeft().z()));
+                    g->vertex(float(boundsSource.topRight().x()),    float(boundsSource.topRight().y()),    float(boundsSource.topRight().z()));
+                    g->vertex(float(boundsSource.topRight().x()),    float(boundsSource.topRight().y()),    float(boundsSource.bottomRight().z()));
+                    g->vertex(float(boundsSource.bottomRight().x()), float(boundsSource.bottomRight().y()), float(boundsSource.topRight().z()));
+                    g->vertex(float(boundsSource.bottomRight().x()), float(boundsSource.bottomRight().y()), float(boundsSource.bottomRight().z()));
+                    g->vertex(float(boundsSource.bottomLeft().x()),  float(boundsSource.bottomLeft().y()),  float(boundsSource.topLeft().z()));
+                    g->vertex(float(boundsSource.bottomLeft().x()),  float(boundsSource.bottomLeft().y()),  float(boundsSource.bottomLeft().z()));
+                    g->end();
+                }
                 Application::render->renderText(boundsSource.topLeft().x()     - 0.30, boundsSource.topLeft().y()     + 0.30, boundsSource.topLeft().z(),   QString::number(boundsTarget.topLeft().y(),     'f', 3), Application::renderFont, true);
                 Application::render->renderText(boundsSource.bottomLeft().x()  - 0.60, boundsSource.bottomLeft().y()  + 0.30, boundsSource.topLeft().z(),   QString::number(boundsTarget.bottomLeft().y(),  'f', 3), Application::renderFont, true);
                 Application::render->renderText(boundsSource.bottomLeft().x()  - 0.00, boundsSource.bottomLeft().y()  - 0.15, boundsSource.topLeft().z(),   QString::number(boundsTarget.bottomLeft().x(),  'f', 3), Application::renderFont, true);
@@ -520,7 +548,7 @@ void NxCursor::paint() {
                     Application::render->renderText(boundsSource.center().x() - 0.40, boundsSource.center().y() - 0.22, boundsSource.bottomRight().z(),     QString::number(boundsTarget.bottomRight().z(), 'f', 3), Application::renderFont, true);
                     Application::render->renderText(boundsSource.center().x() - 0.40, boundsSource.center().y() - 0.22, boundsSource.topRight().z() - 0.50, QString::number(boundsTarget.topRight().z(),    'f', 3), Application::renderFont, true);
                 }
-                glPopMatrix();
+                g->popMatrix();
             }
         }
     }

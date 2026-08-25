@@ -93,11 +93,11 @@ Render::Render(QWidget *parent, void *share)
 Render::Render(QWidget *parent, void*)
     : QOpenGLWidget(parent) {
     QSurfaceFormat sf;
-    //sf.setProfile(QSurfaceFormat::CompatibilityProfile);
-    //sf.setRenderableType(QSurfaceFormat::OpenGL);
-    //sf.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    //sf.setOption(QSurfaceFormat::DeprecatedFunctions);
-    sf.setSamples(4./devicePixelRatioFScale());
+    // B-tier end-state: OpenGL 3.3 Core. All draw paths use GlPainter/GlMesh.
+    sf.setVersion(3, 3);
+    sf.setProfile(QSurfaceFormat::CoreProfile);
+    sf.setDepthBufferSize(24);
+    sf.setSamples(qMax(0, int(4. / devicePixelRatioFScale())));
     setFormat(sf);
 }
 #endif

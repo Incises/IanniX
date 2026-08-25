@@ -27,6 +27,7 @@
 #include "messages/messagemanager.h"
 #include "objects/nxcurve.h"
 #include "objects/nxtrigger.h"
+#include "render/gl/glmesh.h"
 
 #define CURSOR_FIRE_NONE  0
 #define CURSOR_FIRE_GROUP 1
@@ -87,7 +88,7 @@ private:
     NxPoint cursorPosLastSend, cursorRelativePosLastSend, cursorAngleLastSend;
     NxPoint cursorAedLastSend, cursorRelativeAedLastSend;
     qreal cursorAngleCacheSinZ, cursorAngleCacheCosZ, cursorAngleCacheSinY, cursorAngleCacheCosY;
-    GLuint glListCursor;
+    GlMesh meshEllipsoid;
     quint16 boundsSourceMode;
 public:
     inline quint8 getType() const {

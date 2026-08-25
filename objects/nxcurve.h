@@ -30,6 +30,7 @@
 #include "qmath.h"
 #include "items/uipathpointsitem.h"
 #include "render/abstractionsgl.h"
+#include "render/gl/glmesh.h"
 #ifdef Q_OS_WIN
 #define M_E        2.71828182845904523536
 #define M_LOG2E    1.44269504088896340736
@@ -102,7 +103,7 @@ private:
     qreal inertie;
     qint16 selectedPathPointPoint, selectedPathPointControl1, selectedPathPointControl2;
     NxSize shapeSize;
-    GLuint glListCurve;
+    GlMesh meshCurve;
     QString equation;
     QHash<QString,qreal> equationVariables;
     qreal equationVariableT, equationNbPoints, equationVariableTSteps;

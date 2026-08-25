@@ -25,6 +25,7 @@
 #include "nxobject.h"
 #include "messages/messagemanager.h"
 #include "render/abstractionsgl.h"
+#include "render/gl/glmesh.h"
 
 class NxTrigger : public NxObject {
     Q_OBJECT
@@ -43,7 +44,9 @@ private:
     QString textureActive, textureInactive;
     QColor colorTrigged;
     qreal triggerOff;
-    static GLuint glListTrigger;
+    static GlMesh s_meshFill;
+    static GlMesh s_meshOutline;
+    static void ensureMeshes();
 public:
     NxObject *cursorTrigged;
     qint64 lastTrigTime;

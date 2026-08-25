@@ -20,6 +20,8 @@
 */
 
 #include "nxcurve.h"
+#include "render/gl/glpainter.h"
+#include "render/gl/glgeom.h"
 #ifdef Q_OS_WIN
     #define MUSTR(a) QString(a).toStdWString()
 #else
@@ -31,7 +33,7 @@ Q_CORE_EXPORT double qstrtod(const char *s00, char const **se, bool *ok);
 NxCurve::NxCurve(ApplicationCurrent *parent, QTreeWidgetItem *ccParentItem) :
     NxObject(parent, ccParentItem) {
     QTreeWidgetItem::setText(0, tr("CURVE"));
-    glListCurve = glGenLists(1);
+    meshCurve.setDirty(true);
     selectedPathPointPoint = selectedPathPointControl1 = selectedPathPointControl2 = -1;
     curveType = CurveTypePoints;
     equationIsValid = false;
@@ -60,7 +62,7 @@ void NxCurve::initializeCustom() {
 }
 
 NxCurve::~NxCurve() {
-    glDeleteLists(glListCurve, 1);
+    meshCurve.destroy();
 }
 
 void NxCurve::setEquation(const QString &type, const QString &_equation) {
@@ -189,13 +191,17 @@ void NxCurve::paint() {
         if(!Application::allowSelectionCurves)
             color.setAlphaF(color.alphaF()/3);
 
-        if(Render::paintThisGroup)
-            glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
-        else
-            glColor4f(color.redF(), color.greenF(), color.blueF(), 0.1);
+        GlPainter *g = GlPainter::current();
+        if (!g || !g->isReady())
+            return;
 
-        glPushMatrix();
-        glTranslatef(pos.x(), pos.y(), pos.z());
+        if(Render::paintThisGroup)
+            g->setColor(color);
+        else
+            g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), 0.1f);
+
+        g->pushMatrix();
+        g->translate(float(pos.x()), float(pos.y()), float(pos.z()));
 
         //Label
         if((Render::paintThisGroup) && (Application::paintLabel || selectedHover) && (!label.isEmpty())) {
@@ -207,36 +213,37 @@ void NxCurve::paint() {
             Application::render->renderText(pt.x() + 0.1, pt.y() + 0.1, pt.z(), QString::number(id), Application::renderFont, true);
         }
 
-        //Draw
-        if((glListRecreate) || (glListRecreateFromEditor) || (Render::forceLists)) {
-            /*
-            if(pathPoints.count())
-                setPointAt(0, getPathPointsAt(0), getPathPointsAt(0).c1, getPathPointsAt(0).c2, getPathPointsAt(0).smooth);
-            */
-            glNewList(glListCurve, GL_COMPILE_AND_EXECUTE);
-            glLineWidth(OpenGlDrawing::dpi * size);
-            glEnable(GL_LINE_STIPPLE);
-            glLineStipple(lineFactor, lineStipple);
+        // Rebuild cached curve geometry
+        if((glListRecreate) || (glListRecreateFromEditor) || (Render::forceLists) || meshCurve.isDirty() || meshCurve.isEmpty()) {
+            QVector<float> lines;
+            auto appendStripDashed = [&](const QVector<float> &strip, bool closed) {
+                GlGeom::dashifyStrip(lines, strip, int(lineFactor), lineStipple, closed);
+            };
 
             if(curveType == CurveTypeEllipse) {
-                glBegin(GL_LINE_LOOP);
+                QVector<float> strip;
                 for(qreal angle = 0 ; angle <= 2*M_PI ; angle += 0.1)
-                    glVertex3f(shapeSize.width() * qCos(angle), shapeSize.height() * qSin(angle), 0);
-                glEnd();
+                    GlGeom::appendXYZ(strip, float(shapeSize.width() * qCos(angle)), float(shapeSize.height() * qSin(angle)), 0.f);
+                appendStripDashed(strip, true);
             }
             else if((equationIsValid) && (!equation.isEmpty()) && ((curveType == CurveTypeEquationCartesian) || (curveType == CurveTypeEquationPolar)))  {
-                glBegin(GL_LINE_STRIP);
+                QVector<float> strip;
                 try {
                     for(equationVariableT = 0 ; equationVariableT <= 1+equationVariableTSteps ; equationVariableT += equationVariableTSteps) {
                         qreal *ptCoords = equationParser.Eval(equationNbEval);
-                        if(curveType == CurveTypeEquationPolar) glVertex3f(ptCoords[0] * sin(ptCoords[1]) * cos(ptCoords[2]), ptCoords[0] * cos(ptCoords[1]), ptCoords[0] * sin(ptCoords[1]) * sin(ptCoords[2]));
-                        else                                    glVertex3f(ptCoords[0], ptCoords[1], ptCoords[2]);
+                        if(curveType == CurveTypeEquationPolar)
+                            GlGeom::appendXYZ(strip,
+                                              float(ptCoords[0] * sin(ptCoords[1]) * cos(ptCoords[2])),
+                                              float(ptCoords[0] * cos(ptCoords[1])),
+                                              float(ptCoords[0] * sin(ptCoords[1]) * sin(ptCoords[2])));
+                        else
+                            GlGeom::appendXYZ(strip, float(ptCoords[0]), float(ptCoords[1]), float(ptCoords[2]));
                     }
                 }
                 catch (Parser::exception_type &e) {
                     qDebug("[MathParser] Paint error");
                 }
-                glEnd();
+                appendStripDashed(strip, false);
             }
             else if(curveType == CurveTypePoints) {
                 for(quint16 indexPoint = 0 ; indexPoint < pathPoints.count() ; indexPoint++) {
@@ -246,31 +253,24 @@ void NxCurve::paint() {
                         NxPoint c1 = p1 + _c1, c2 = p2 + _c2;
 
                         if((_c1 == NxPoint()) && (_c2 == NxPoint())) {
-                            glBegin(GL_LINES);
-                            glVertex3f(p1.x(), p1.y(), p1.z());
-                            glVertex3f(p2.x(), p2.y(), p2.z());
-                            glEnd();
+                            QVector<float> strip;
+                            GlGeom::appendXYZ(strip, float(p1.x()), float(p1.y()), float(p1.z()));
+                            GlGeom::appendXYZ(strip, float(p2.x()), float(p2.y()), float(p2.z()));
+                            appendStripDashed(strip, false);
                         }
                         else {
-                            GLfloat ctrlpoints[4][3] = {
-                                { (GLfloat)p1.x(), (GLfloat)p1.y(), (GLfloat)p1.z() }, { (GLfloat)c1.x(), (GLfloat)c1.y(), (GLfloat)c1.z() },
-                                { (GLfloat)c2.x(), (GLfloat)c2.y(), (GLfloat)c2.z() }, { (GLfloat)p2.x(), (GLfloat)p2.y(), (GLfloat)p2.z() } };
-                            glMap1f(GL_MAP1_VERTEX_3, 0.0, 1.0, 3, 4, &ctrlpoints[0][0]);
-                            glEnable(GL_MAP1_VERTEX_3);
-                            glBegin(GL_LINE_STRIP);
-                            for(GLfloat t = 0.0f ; t <= 1.0f ; t += 0.02f)
-                                glEvalCoord1f(t);
-                            glEnd();
-                            glDisable(GL_MAP1_VERTEX_3);
+                            QVector<float> strip;
+                            GlGeom::sampleCubicBezier(strip,
+                                                      float(p1.x()), float(p1.y()), float(p1.z()),
+                                                      float(c1.x()), float(c1.y()), float(c1.z()),
+                                                      float(c2.x()), float(c2.y()), float(c2.z()),
+                                                      float(p2.x()), float(p2.y()), float(p2.z()));
+                            appendStripDashed(strip, false);
                         }
-
-                        //if((selected) && (indexPoint == selectedPathPointPoint))
-                        //    UiRenderOptions::render->renderText(p1.x(), p1.y(), p1.z(), QString::number(indexPoint), UiRenderOptions::renderFont, true);
                     }
                 }
             }
-            glDisable(GL_LINE_STIPPLE);
-            glEndList();
+            meshCurve.upload(GL_LINES, lines, lines.size() / 3);
             if(glListRecreateFromEditor)
                 curveNeedUpdate = true;
             if((glListRecreate) && (pathPointsEditor) && (pathPointsEditor->isVisible()))
@@ -278,56 +278,54 @@ void NxCurve::paint() {
             glListRecreate           = false;
             glListRecreateFromEditor = false;
         }
-        else
-            glCallList(glListCurve);
+
+        g->setLineWidth(float(OpenGlDrawing::dpi * size));
+        meshCurve.draw(g);
+        g->setLineWidth(float(OpenGlDrawing::dpi));
 
         //Selection
         if((selected) && (curveType == CurveTypePoints)) {
-            glLineWidth(OpenGlDrawing::dpi);
             for(quint16 indexPoint = 0 ; indexPoint < pathPoints.count() ; indexPoint++) {
                 NxPoint p1 = getPathPointsAt(indexPoint);
 
                 if(selectedPathPointPoint == indexPoint)
-                    glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+                    g->setColor(color);
                 else
-                    glColor4f(color.redF(), color.greenF(), color.blueF(), 0.5);
-                glBegin(GL_QUADS);
+                    g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), 0.5f);
+                g->begin(GL_QUADS);
                 qreal squareSize = (0.15 * Render::zoomLinear) / 4;
-                glVertex3f(p1.x() - squareSize, p1.y() - squareSize, p1.z());
-                glVertex3f(p1.x() + squareSize, p1.y() - squareSize, p1.z());
-                glVertex3f(p1.x() + squareSize, p1.y() + squareSize, p1.z());
-                glVertex3f(p1.x() - squareSize, p1.y() + squareSize, p1.z());
-                glEnd();
+                g->vertex(float(p1.x() - squareSize), float(p1.y() - squareSize), float(p1.z()));
+                g->vertex(float(p1.x() + squareSize), float(p1.y() - squareSize), float(p1.z()));
+                g->vertex(float(p1.x() + squareSize), float(p1.y() + squareSize), float(p1.z()));
+                g->vertex(float(p1.x() - squareSize), float(p1.y() + squareSize), float(p1.z()));
+                g->end();
 
 
                 if((indexPoint+1) < pathPoints.count()) {
                     NxPoint c1 = p1 + getPathPointsAt(indexPoint+1).c1;
-                    /*if(selectedPathPointControl1 >= 0)
-                        qDebug("%d", selectedPathPointControl1);*/
                     if(selectedPathPointControl1 == indexPoint+1)
-                        glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+                        g->setColor(color);
                     else
-                        glColor4f(color.redF(), color.greenF(), color.blueF(), 0.5);
-                    glBegin(GL_LINES);
-                    glVertex3f(p1.x(), p1.y(), p1.z());
-                    glVertex3f(c1.x(), c1.y(), c1.z());
-                    glEnd();
+                        g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), 0.5f);
+                    g->begin(GL_LINES);
+                    g->vertex(float(p1.x()), float(p1.y()), float(p1.z()));
+                    g->vertex(float(c1.x()), float(c1.y()), float(c1.z()));
+                    g->end();
 
                     NxPoint p2 = getPathPointsAt(indexPoint+1), c2 = p2 + getPathPointsAt(indexPoint+1).c2;
                     if(selectedPathPointControl2 == indexPoint+1)
-                        glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+                        g->setColor(color);
                     else
-                        glColor4f(color.redF(), color.greenF(), color.blueF(), 0.5);
-                    glBegin(GL_LINES);
-                    glVertex3f(p2.x(), p2.y(), p2.z());
-                    glVertex3f(c2.x(), c2.y(), c2.z());
-                    glEnd();
+                        g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), 0.5f);
+                    g->begin(GL_LINES);
+                    g->vertex(float(p2.x()), float(p2.y()), float(p2.z()));
+                    g->vertex(float(c2.x()), float(c2.y()), float(c2.z()));
+                    g->end();
                 }
             }
         }
 
-        //End
-        glPopMatrix();
+        g->popMatrix();
     }
 }
 

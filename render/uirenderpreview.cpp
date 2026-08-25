@@ -20,6 +20,9 @@
 */
 
 #include "uirenderpreview.h"
+#include "gl/glpainter.h"
+
+#include <QtGlobal>
 
 #ifdef USE_GLWIDGET
 UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
@@ -29,11 +32,10 @@ UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
     QOpenGLWidget(parent) {
     Q_UNUSED(shared);
     QSurfaceFormat sf;
-    //sf.setProfile(QSurfaceFormat::CompatibilityProfile);
-    //sf.setRenderableType(QSurfaceFormat::OpenGL);
-    //sf.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    //sf.setOption(QSurfaceFormat::DeprecatedFunctions);
-    sf.setSamples(4./devicePixelRatioFScale());
+    // Match main render: OpenGL 3.3 Core (MIGRATION.md §14).
+    sf.setVersion(3, 3);
+    sf.setProfile(QSurfaceFormat::CoreProfile);
+    sf.setSamples(qMax(0, int(4. / devicePixelRatioFScale())));
     setFormat(sf);
 #endif
     setFocusPolicy(Qt::StrongFocus);
@@ -41,16 +43,17 @@ UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
 }
 
 void UiRenderPreview::initializeGL() {
-    //OpenGL options
+    if (!GlPainter::instance()->initialize())
+        qWarning("UiRenderPreview: GlPainter initialization failed");
 }
 
 void UiRenderPreview::resizeGL(int width, int height) {
-    glViewport(0, 0, (GLint)width, (GLint)height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 1, 0, 1, 1, -1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    GlPainter *g = GlPainter::instance();
+    if (g && g->isReady()) {
+        g->viewport(0, 0, width, height);
+        g->setOrtho(0, 1, 0, 1, 1, -1);
+        g->loadIdentity();
+    }
 }
 
 void UiRenderPreview::paintPreview(NxEventsPropagation *_render, GLuint _renderPreviewTexture, QSizeF _renderSize) {
@@ -62,8 +65,15 @@ void UiRenderPreview::paintPreview(NxEventsPropagation *_render, GLuint _renderP
 }
 
 void UiRenderPreview::paintGL() {
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
+    GlPainter *g = GlPainter::instance();
+    if (!g || !g->isReady())
+        return;
+
+    g->beginFrame();
+    g->clearColor(QColor(0, 0, 0, 255));
+    g->clear(GL_COLOR_BUFFER_BIT);
+    g->setOrtho(0, 1, 0, 1, 1, -1);
+    g->loadIdentity();
 
     qreal scaleX = 1, scaleY = 1;
     qreal ratioRender  = (qreal)width()            / (qreal)height();
@@ -72,16 +82,17 @@ void UiRenderPreview::paintGL() {
     if(ratioRender >= ratioTexture) scaleX = ratioTexture / ratioRender;
     else                            scaleY = ratioRender  / ratioTexture;
 
-    glPushMatrix();
-    glTranslatef((1-scaleX)/2, (1-scaleY)/2, 0);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, renderPreviewTexture);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);    glVertex3f(0,      0,      0);
-    glTexCoord2f(1, 0);    glVertex3f(scaleX, 0,      0);
-    glTexCoord2f(1, 1);    glVertex3f(scaleX, scaleY, 0);
-    glTexCoord2f(0, 1);    glVertex3f(0,      scaleY, 0);
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
-    glPopMatrix();
+    g->pushMatrix();
+    g->translate(float((1-scaleX)/2), float((1-scaleY)/2), 0);
+    g->setColor(1, 1, 1, 1);
+    g->bindTexture(GlPainter::Texture2D, renderPreviewTexture);
+    g->begin(GL_QUADS);
+    g->texCoord(0, 0); g->vertex(0, 0);
+    g->texCoord(1, 0); g->vertex(float(scaleX), 0);
+    g->texCoord(1, 1); g->vertex(float(scaleX), float(scaleY));
+    g->texCoord(0, 1); g->vertex(0, float(scaleY));
+    g->end();
+    g->unbindTexture();
+    g->popMatrix();
+    g->endFrame();
 }

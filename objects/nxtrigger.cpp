@@ -20,8 +20,30 @@
 */
 
 #include "nxtrigger.h"
+#include "render/gl/glpainter.h"
+#include "render/gl/glgeom.h"
 
-GLuint NxTrigger::glListTrigger = 0;
+#include <QtMath>
+
+GlMesh NxTrigger::s_meshFill;
+GlMesh NxTrigger::s_meshOutline;
+
+void NxTrigger::ensureMeshes()
+{
+    if (!s_meshFill.isEmpty() && !s_meshOutline.isEmpty() && !s_meshFill.isDirty())
+        return;
+
+    QVector<float> fill;
+    QVector<float> outline;
+    for (qreal drawAngle = 0; drawAngle < 2 * M_PI; drawAngle += 0.1) {
+        const float c = float(qCos(drawAngle));
+        const float s = float(qSin(drawAngle));
+        GlGeom::appendXYZ(fill, 0.5f * c, 0.5f * s, 0.f);
+        GlGeom::appendXYZ(outline, 1.2f * c, 1.2f * s, 0.f);
+    }
+    s_meshFill.upload(GL_TRIANGLE_FAN, fill, fill.size() / 3);
+    s_meshOutline.upload(GL_LINE_LOOP, outline, outline.size() / 3);
+}
 
 NxTrigger::NxTrigger(ApplicationCurrent *parent, QTreeWidgetItem *ccParentItem) :
     NxObject(parent, ccParentItem) {
@@ -78,16 +100,20 @@ void NxTrigger::paint() {
         if(!Application::allowSelectionTriggers)
             color.setAlphaF(color.alphaF()/3);
 
-        if(Render::paintThisGroup)
-            glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
-        else
-            glColor4f(color.redF(), color.greenF(), color.blueF(), 0.1);
+        GlPainter *g = GlPainter::current();
+        if (!g || !g->isReady())
+            return;
 
-        glPushMatrix();
-        glTranslatef(pos.x(), pos.y(), pos.z());
-        glRotatef(Render::rotation.z(), 0, 0, -1);
-        glRotatef(Render::rotation.x(), 0, -1, 0);
-        glRotatef(Render::rotation.y(), -1, 0, 0);
+        if(Render::paintThisGroup)
+            g->setColor(color);
+        else
+            g->setColor(float(color.redF()), float(color.greenF()), float(color.blueF()), 0.1f);
+
+        g->pushMatrix();
+        g->translate(float(pos.x()), float(pos.y()), float(pos.z()));
+        g->rotate(float(Render::rotation.z()), 0, 0, -1);
+        g->rotate(float(Render::rotation.x()), 0, -1, 0);
+        g->rotate(float(Render::rotation.y()), -1, 0, 0);
 
         //Label
         if((Render::paintThisGroup) && (Application::paintLabel || selectedHover) && (!label.isEmpty()))
@@ -109,57 +135,48 @@ void NxTrigger::paint() {
             UiRenderTexture *texture = Render::textures->value(textureName);
             if((texture) && (texture->loaded) && (texture->mapping.width() != 0 ) && (texture->mapping.height() != 0)) {
                 textureOk = true;
-
+                const qreal widthRatio = cacheSize * texture->originalSize.width() / texture->originalSize.height();
                 if(texture->isSyphon) {
-                    glEnable(GL_TEXTURE_RECTANGLE_ARB);
-                    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture->texture);
-                    glBegin(GL_QUADS);
-                    qreal widthRatio = cacheSize * texture->originalSize.width() / texture->originalSize.height();
-                    glTexCoord2d(0, 0); glVertex3f(widthRatio * texture->mapping.left(),  cacheSize * texture->mapping.bottom(), 0);
-                    glTexCoord2d(texture->originalSize.width(), 0); glVertex3f(widthRatio * texture->mapping.right(), cacheSize * texture->mapping.bottom(), 0);
-                    glTexCoord2d(texture->originalSize.width(), texture->originalSize.height()); glVertex3f(widthRatio * texture->mapping.right(), cacheSize * texture->mapping.top(), 0);
-                    glTexCoord2d(0, texture->originalSize.height()); glVertex3f(widthRatio * texture->mapping.left(),  cacheSize * texture->mapping.top(), 0);
-                    glEnd();
-                    glDisable(GL_TEXTURE_RECTANGLE_ARB);
+                    g->bindTexture(GlPainter::TextureRectangle, texture->texture);
+                    g->begin(GL_QUADS);
+                    g->texCoord(0, 0);
+                    g->vertex(float(widthRatio * texture->mapping.left()), float(cacheSize * texture->mapping.bottom()));
+                    g->texCoord(float(texture->originalSize.width()), 0);
+                    g->vertex(float(widthRatio * texture->mapping.right()), float(cacheSize * texture->mapping.bottom()));
+                    g->texCoord(float(texture->originalSize.width()), float(texture->originalSize.height()));
+                    g->vertex(float(widthRatio * texture->mapping.right()), float(cacheSize * texture->mapping.top()));
+                    g->texCoord(0, float(texture->originalSize.height()));
+                    g->vertex(float(widthRatio * texture->mapping.left()), float(cacheSize * texture->mapping.top()));
+                    g->end();
+                    g->unbindTexture();
                 }
                 else {
-                    glEnable(GL_TEXTURE_2D);
-                    glBindTexture(GL_TEXTURE_2D, texture->texture);
-                    glBegin(GL_QUADS);
-                    qreal widthRatio = cacheSize * texture->originalSize.width() / texture->originalSize.height();
-                    glTexCoord2d(0, 0); glVertex3f(widthRatio * texture->mapping.left(),  cacheSize * texture->mapping.bottom(), 0);
-                    glTexCoord2d(1, 0); glVertex3f(widthRatio * texture->mapping.right(), cacheSize * texture->mapping.bottom(), 0);
-                    glTexCoord2d(1, 1); glVertex3f(widthRatio * texture->mapping.right(), cacheSize * texture->mapping.top(), 0);
-                    glTexCoord2d(0, 1); glVertex3f(widthRatio * texture->mapping.left(),  cacheSize * texture->mapping.top(), 0);
-                    glEnd();
-                    glDisable(GL_TEXTURE_2D);
+                    g->bindTexture(GlPainter::Texture2D, texture->texture);
+                    g->begin(GL_QUADS);
+                    g->texCoord(0, 0);
+                    g->vertex(float(widthRatio * texture->mapping.left()), float(cacheSize * texture->mapping.bottom()));
+                    g->texCoord(1, 0);
+                    g->vertex(float(widthRatio * texture->mapping.right()), float(cacheSize * texture->mapping.bottom()));
+                    g->texCoord(1, 1);
+                    g->vertex(float(widthRatio * texture->mapping.right()), float(cacheSize * texture->mapping.top()));
+                    g->texCoord(0, 1);
+                    g->vertex(float(widthRatio * texture->mapping.left()), float(cacheSize * texture->mapping.top()));
+                    g->end();
+                    g->unbindTexture();
                 }
             }
         }
         if(!textureOk) {
-            glScalef(cacheSize, cacheSize, cacheSize);
-            if(glListTrigger == 0) {
-                glListTrigger = glGenLists(1);
-                glNewList(glListTrigger, GL_COMPILE_AND_EXECUTE);
-                glLineWidth(OpenGlDrawing::dpi * size);
-                glBegin(GL_POLYGON);
-                for(qreal drawAngle = 0 ; drawAngle < 2*M_PI ; drawAngle += 0.1)
-                    glVertex2d(0.5 * qCos(drawAngle), 0.5 * qSin(drawAngle));
-                glEnd();
-                glLineWidth(OpenGlDrawing::dpi * 1.5);
-                glBegin(GL_LINE_LOOP);
-                for(qreal drawAngle = 0 ; drawAngle < 2*M_PI ; drawAngle += 0.1)
-                    glVertex2d(1.2 * qCos(drawAngle), 1.2 * qSin(drawAngle));
-                glEnd();
-                glLineWidth(OpenGlDrawing::dpi);
-                glEndList();
-            }
-            else
-                glCallList(glListTrigger);
+            ensureMeshes();
+            g->scale(float(cacheSize), float(cacheSize), float(cacheSize));
+            g->setLineWidth(float(OpenGlDrawing::dpi * size));
+            s_meshFill.draw(g);
+            g->setLineWidth(float(OpenGlDrawing::dpi * 1.5));
+            s_meshOutline.draw(g);
+            g->setLineWidth(float(OpenGlDrawing::dpi));
         }
 
-        //End
-        glPopMatrix();
+        g->popMatrix();
     }
 }
 

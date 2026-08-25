@@ -17,6 +17,7 @@
 */
 
 #include "extkinectmanager.h"
+#include "render/gl/glpainter.h"
 
 ExtKinectManager::ExtKinectManager(QWidget *parent) :
     QLabel(parent) {
@@ -150,15 +151,18 @@ qreal ExtKinectManager::getDepthAt(qreal _x, qreal _y) const {
 
 //Paint event
 void ExtKinectManager::paint() {
+    // Dead path historically (immediate return). Migrated to GlPainter for Core readiness
+    // when USE_KINECT builds enable this; currently still early-outs.
     return;
-    //return;
-    glColor4f(1, 1, 1, 0.5);
+    GlPainter *g = GlPainter::current();
+    if (!g || !g->isReady())
+        return;
+    g->setColor(1, 1, 1, 0.5f);
     for(qreal y = -5 ; y < 5 ; y += 0.1) {
-        //Dessin des lignes
-        glBegin(GL_LINE_STRIP);
+        g->begin(GL_LINE_STRIP);
         for(qreal x = -5 ; x < 5; x += 0.1)
-            glVertex3f(x, y, getDepthAt(x, y));
-        glEnd();
+            g->vertex(float(x), float(y), float(getDepthAt(x, y)));
+        g->end();
     }
 }
 

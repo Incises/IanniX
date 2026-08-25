@@ -203,6 +203,14 @@ set(RENDER_FORMS
     render/uirender.ui
 )
 
+# -- Modern GL layer (B-tier: GlPainter / GlMesh) --
+set(GL_HEADERS
+    render/gl/glpainter.h render/gl/glmesh.h render/gl/glgeom.h
+)
+set(GL_SOURCES
+    render/gl/glpainter.cpp render/gl/glmesh.cpp
+)
+
 # -- Geometry --
 set(GEOMETRY_HEADERS
     geometry/nxpoint.h geometry/nxrect.h geometry/nxsize.h
@@ -392,6 +400,7 @@ set(ALL_SOURCES
     ${MESSAGES_SOURCES}    ${MESSAGES_HEADERS}
     ${TRANSPORT_SOURCES}   ${TRANSPORT_HEADERS}
     ${RENDER_SOURCES}      ${RENDER_HEADERS}
+    ${GL_SOURCES}          ${GL_HEADERS}
     ${GEOMETRY_SOURCES}    ${GEOMETRY_HEADERS}
     ${OBJECTS_SOURCES}     ${OBJECTS_HEADERS}
     ${GUI_SOURCES}         ${GUI_HEADERS}

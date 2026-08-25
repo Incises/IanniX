@@ -36,6 +36,7 @@
 #include "objects/nxdocument.h"
 #include "misc/application.h"
 #include "abstractionsgl.h"
+#include "gl/glpainter.h"
 
 #include "render/uirenderpreview.h"
 #ifdef FFMPEG_INSTALLED
@@ -248,10 +249,16 @@ public:
 #endif
 #ifdef USE_OPENGLWIDGET
     inline void qglColor(const QColor &color) {
-        glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+        if (GlPainter *painter = GlPainter::current()) {
+            if (painter->isReady())
+                painter->setColor(color);
+        }
     }
     inline void qglClearColor(const QColor &color) {
-        glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+        if (GlPainter *painter = GlPainter::current()) {
+            if (painter->isReady())
+                painter->clearColor(color);
+        }
     }
     quint16 renderTextTextureIndex;
     OpenGlFont renderTextFont;
