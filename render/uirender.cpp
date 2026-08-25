@@ -638,12 +638,14 @@ void UiRender::wheelEvent(QWheelEvent *event) {
     bool mouse3D = ((event->modifiers() & Qt::AltModifier) == Qt::AltModifier) && !((event->modifiers() & Qt::ControlModifier) == Qt::ControlModifier);
 
     //Zoom calculation
+    const qreal wheelDelta = event->angleDelta().y();
+
     if(mouse3D) {
-        scaleDest = qMax((qreal)0, scale - (qreal)event->delta() / 150.0F);
+        scaleDest = qMax((qreal)0, scale - wheelDelta / 150.0F);
         //refresh();
     }
-    else if(event->modifiers() & Qt::ShiftModifier) Application::current->execute(QString("%1 %2").arg(COMMAND_ZOOM).arg(Render::zoomValue - (qreal)event->delta() / 3.0F), ExecuteSourceGui);
-    else                                            Application::current->execute(QString("%1 %2").arg(COMMAND_ZOOM).arg(Render::zoomValue - (qreal)event->delta() / 15.0F), ExecuteSourceGui);
+    else if(event->modifiers() & Qt::ShiftModifier) Application::current->execute(QString("%1 %2").arg(COMMAND_ZOOM).arg(Render::zoomValue - wheelDelta / 3.0F), ExecuteSourceGui);
+    else                                            Application::current->execute(QString("%1 %2").arg(COMMAND_ZOOM).arg(Render::zoomValue - wheelDelta / 15.0F), ExecuteSourceGui);
 }
 void UiRender::mousePressEvent(QMouseEvent *event) {
     const QPoint eventPos = mouseEventPosition(event);

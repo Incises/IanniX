@@ -79,7 +79,7 @@ bool InterfaceTcpServer::send(const Message &message, QStringList *messageSent) 
             union { float f; char ch[4]; } u;
             u.f = valeur.toFloat(&isFloat);
             if(!isFloat)
-                bytes.append(valeur.toString());
+                bytes.append(valeur.toString().toUtf8());
             else {
                 bytes.append(u.ch[0]);
                 bytes.append(u.ch[1]);

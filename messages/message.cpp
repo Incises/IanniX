@@ -56,9 +56,9 @@ void Message::setUrl(const QUrl & url, QJSEngine *_messageScriptEngine) {
 
     if(scheme == "osc") {
         type = MessagesTypeOsc;
-        host = urlMessage.host().toLower();
+        host = QHostAddress(urlMessage.host().toLower());
         port = urlMessage.port();
-        address += urlMessage.path();
+        address += urlMessage.path().toUtf8();
         address += (char)0;
         pad(address);
         typetag += ',';
@@ -68,11 +68,11 @@ void Message::setUrl(const QUrl & url, QJSEngine *_messageScriptEngine) {
     }
     else if(scheme == "tcp") {
         type = MessagesTypeTcp;
-        address += urlMessage.authority() + urlMessage.path();
+        address += (urlMessage.authority() + urlMessage.path()).toUtf8();
     }
     else if(scheme == "udp") {
         type = MessagesTypeUdp;
-        host = urlMessage.host();
+        host = QHostAddress(urlMessage.host());
         port = urlMessage.port();
     }
     else if(scheme == "serial") {
@@ -614,7 +614,7 @@ bool Message::addString(QString str, const QString & name, quint16) {
     verboseValues << str;
     hasAdd = true;
     if(type == MessagesTypeOsc) {
-        arguments += str;
+        arguments += str.toUtf8();
         arguments += (char)0;
         pad(arguments);
         typetag += 's';

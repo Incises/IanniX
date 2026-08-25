@@ -327,5 +327,5 @@ void CodeEditor::setBracketsMatchingEnabled(bool enable)
 
 void CodeEditor::setTabStopWidth(int width)
 {
-    QPlainTextEdit::setTabStopWidth(width);
+    setTabStopDistance(width);
 }

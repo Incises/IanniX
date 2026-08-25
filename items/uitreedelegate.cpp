@@ -165,7 +165,7 @@ void UiTreeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     }
     else if(options.type.startsWith("color")) {
         drawBackground(painter, option, index);
-        if(options.model->data(index).canConvert(QVariant::Color)) {
+        if(options.model->data(index).canConvert<QColor>()) {
             QRect realRect = option.rect.adjusted(2, 2, -2, -2);
             QColor color = options.model->data(index).value<QColor>();
             if(color.alpha() < 255) {

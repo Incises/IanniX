@@ -693,7 +693,7 @@ QImage OpenGlDrawing::drawText(const QColor &color, const OpenGlFont &font, cons
 }
 qreal OpenGlDrawing::drawText(QPainter *painter, const QColor &color, const OpenGlFont &font, const QRectF &rect, const QString &_text) {
     if(painter)
-        painter->setRenderHints(QPainter::Antialiasing | QPainter::HighQualityAntialiasing | QPainter::TextAntialiasing);
+        painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 
     QFontMetrics fontMetrics(font);
     QString text = _text;
@@ -702,7 +702,7 @@ qreal OpenGlDrawing::drawText(QPainter *painter, const QColor &color, const Open
 
     if((text.toLower().startsWith("<p")) || (text.toLower().startsWith("<span"))) {
         QTextOption textOption(font.alignementFlags());
-        textOption.setTabStop(40);
+        textOption.setTabStopDistance(40);
 
         QStaticText staticText(text);
         staticText.setTextWidth(rect.width());
@@ -749,7 +749,7 @@ qreal OpenGlDrawing::drawText(QPainter *painter, const QColor &color, const Open
     }
     else {
         QTextOption textOption(font.alignementFlags());
-        textOption.setTabStop(40);
+        textOption.setTabStopDistance(40);
         qreal leading = fontMetrics.leading() + fontMetrics.height() * font. leading() / 100.;
         qreal interparagraph =                  fontMetrics.height() * font.pLeading() / 100.;
         qreal height = 0;

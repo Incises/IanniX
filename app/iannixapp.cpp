@@ -20,7 +20,6 @@
 */
 
 #include <QFontDatabase>
-#include <QTextCodec>
 #include "iannixapp.h"
 #include "misc/help.h"
 #include "misc/options.h"

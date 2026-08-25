@@ -25,6 +25,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QRandomGenerator>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QNetworkAccessManager>

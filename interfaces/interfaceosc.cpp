@@ -19,6 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
 #include "interfaceosc.h"
 #include "ui_interfaceosc.h"
 
@@ -206,7 +207,7 @@ void InterfaceOsc::bonjourScan() {
     }
 #endif
 
-    qSort(bonjourServices.begin(), bonjourServices.end(), BonjourService::sort);
+    std::sort(bonjourServices.begin(), bonjourServices.end(), BonjourService::sort);
     QTimer::singleShot(5000, this, SLOT(bonjourScan()));
 }
 void InterfaceOsc::openBonjour() {
