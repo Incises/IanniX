@@ -127,12 +127,12 @@ public:
         return QString("%1 %2 %3").arg(Render::rotationDest.x()).arg(Render::rotationDest.y()).arg(Render::rotationDest.z());
     }
     inline void setCenterStr(const QString & pos) {
-        QStringList posItems = pos.split(" ", QString::SkipEmptyParts);
+        QStringList posItems = pos.split(" ", Qt::SkipEmptyParts);
         if(posItems.count() > 1)
             Application::render->centerOn(NxPoint(posItems.at(0).toDouble(), posItems.at(1).toDouble()));
     }
     inline void setRotateStr(const QString & pos) {
-        QStringList posItems = pos.split(" ", QString::SkipEmptyParts);
+        QStringList posItems = pos.split(" ", Qt::SkipEmptyParts);
         if(posItems.count() > 5)
             Application::render->rotateTo(NxPoint(posItems.at(0).toDouble(), posItems.at(1).toDouble(), posItems.at(2).toDouble()), NxPoint(posItems.at(3).toDouble(), posItems.at(4).toDouble(), posItems.at(5).toDouble()));
         else if(posItems.count() > 2)

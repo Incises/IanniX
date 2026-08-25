@@ -169,7 +169,7 @@ UiInspector::UiInspector(QWidget *parent) :
         QHash<QString, QString> params;
         QFile templateFile(file.absoluteFilePath());
         if(templateFile.open(QFile::ReadOnly)) {
-            QStringList templatesLong = QString(templateFile.readAll()).split("\n", QString::SkipEmptyParts);
+            QStringList templatesLong = QString(templateFile.readAll()).split("\n", Qt::SkipEmptyParts);
             foreach(const QString &templateLong, templatesLong) {
                 if(templateLong.startsWith("["))
                     header = templateLong.toLower();
@@ -369,7 +369,7 @@ void UiInspector::actionColor() {
     if(!actionInfoLock) {
         QComboBox *combo = (QComboBox*)sender();
         QString val = combo->currentText();
-        QStringList oldValStr = combo->currentText().split(" ", QString::SkipEmptyParts);
+        QStringList oldValStr = combo->currentText().split(" ", Qt::SkipEmptyParts);
         if(combo->currentText() == tr("Choose…")) {
             QColor oldVal = Qt::white;
             if(oldValStr.count() == 4)
@@ -964,7 +964,7 @@ void UiInspector::colorComboAdd(QComboBox *spin, QStringList values) {
         QString colorName = value;
         QPixmap icon(32, 32);
         QColor color = Qt::gray;
-        QStringList valueSplit = colorName.split(" ", QString::SkipEmptyParts);
+        QStringList valueSplit = colorName.split(" ", Qt::SkipEmptyParts);
         if(valueSplit.count() == 4) color = QColor(valueSplit.at(0).toUInt(), valueSplit.at(1).toUInt(), valueSplit.at(2).toUInt(), valueSplit.at(3).toUInt());
         else if((colorName.startsWith(Application::colorsPrefix(0))) || (colorName.startsWith(Application::colorsPrefix(1)))) {
             if((!colorName.contains("_gui_")) && (((colorName.startsWith(Application::colorsPrefix(0))) && (Application::colorsPrefix() == Application::colorsPrefix(0))) || ((colorName.startsWith(Application::colorsPrefix(1))) && (Application::colorsPrefix() == Application::colorsPrefix(1))))) {

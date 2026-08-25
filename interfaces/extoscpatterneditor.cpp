@@ -80,7 +80,7 @@ ExtOscPatternEditor::ExtOscPatternEditor(QWidget *parent) :
         QHash<QString, QString> params;
         QFile templateFile(file.absoluteFilePath());
         if(templateFile.open(QFile::ReadOnly)) {
-            QStringList templatesLong = QString(templateFile.readAll()).split("\n", QString::SkipEmptyParts);
+            QStringList templatesLong = QString(templateFile.readAll()).split("\n", Qt::SkipEmptyParts);
             foreach(const QString &templateLong, templatesLong) {
                 if(templateLong.startsWith("["))
                     header = templateLong.toLower();
@@ -278,7 +278,7 @@ void ExtOscPatternEditor::setPattern(const QVector<QByteArray > & messagePattern
 void ExtOscPatternEditor::setCurrentItem(QComboBox *combo, QLabel *label, const QString &value, bool forceVisible) {
     bool ok = false;
     for(quint16 i = 0 ; i < combo->count() ; i++) {
-        QString val = combo->itemText(i).split(QString(" - "), QString::KeepEmptyParts).at(0);
+        QString val = combo->itemText(i).split(QString(" - "), Qt::KeepEmptyParts).at(0);
         if(val == value) {
             combo->setCurrentIndex(i);
             ok = true;
@@ -295,7 +295,7 @@ void ExtOscPatternEditor::setCurrentItem(QComboBox *combo, QLabel *label, const 
 }
 
 QString ExtOscPatternEditor::getItem(QComboBox *combo, const QString &valDefault, const QString &prefix) const {
-    QString val = combo->currentText().split(QString(" - "), QString::KeepEmptyParts).at(0);
+    QString val = combo->currentText().split(QString(" - "), Qt::KeepEmptyParts).at(0);
     if(!val.isEmpty()) {
         if(!prefix.isEmpty()) {
             if(val.startsWith(prefix))  return val;
@@ -367,7 +367,7 @@ void ExtOscPatternEditor::learn() {
     displayBox->display(tr("MIDI/OSC learn"), tr("Please send an event to IanniX\n\nMove a slider on your surface control or press a MIDI note…"));
     QString message = Application::current->waitForMessage();
     if(!message.isEmpty()) {
-        QStringList messageArguments = message.split("\t", QString::SkipEmptyParts);
+        QStringList messageArguments = message.split("\t", Qt::SkipEmptyParts);
         QString messageRecomposed;
         QString valuePrefix = "cursor_";
         if(isTrigger)

@@ -155,7 +155,7 @@ void InterfaceTcp::parseXml(const QDomDocument &xmlDoc, QTcpSocket *socket) {
                 QDomElement xmlArgument = xmlOscArgument.toElement();
                 if((!xmlArgument.isNull()) && (xmlArgument.tagName().toUpper() == "ARGUMENT")) {
                     QString command = xmlArgument.attribute("VALUE").replace("%20", " ");
-                    MessageManager::incomingMessage(MessageIncomming("tcp", socket->peerAddress().toString(), socket->peerPort(), destination, command, command.split(" ", QString::SkipEmptyParts)));
+                    MessageManager::incomingMessage(MessageIncomming("tcp", socket->peerAddress().toString(), socket->peerPort(), destination, command, command.split(" ", Qt::SkipEmptyParts)));
                 }
                 xmlOscArgument = xmlOscArgument.nextSibling();
             }

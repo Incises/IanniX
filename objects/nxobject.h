@@ -203,14 +203,14 @@ public slots:
         }
     }
     inline void setPosStr(const QString & pos) {
-        QStringList posItems = pos.split(" ", QString::SkipEmptyParts);
+        QStringList posItems = pos.split(" ", Qt::SkipEmptyParts);
         if(posItems.count() > 2)
             setPos(NxPoint(posItems.at(0).toDouble(), posItems.at(1).toDouble(), posItems.at(2).toDouble()));
         else if(posItems.count() > 1)
             setPos(NxPoint(posItems.at(0).toDouble(), posItems.at(1).toDouble(), 0));
     }
     inline void setPosTranslateStr(const QString & posTranslate) {
-        QStringList posItems = posTranslate.split(" ", QString::SkipEmptyParts);
+        QStringList posItems = posTranslate.split(" ", Qt::SkipEmptyParts);
         if(posItems.count() > 2)
             setPos(pos + NxPoint(posItems.at(0).toDouble(), posItems.at(1).toDouble(), posItems.at(2).toDouble()));
         else if(posItems.count() > 1)
@@ -236,7 +236,7 @@ public slots:
         return QString("%1 %2").arg(getLineStipple()).arg(getLineFactor());
     }
     inline void setLineStr(const QString & line) {
-        QStringList lineItems = line.split(" ", QString::SkipEmptyParts);
+        QStringList lineItems = line.split(" ", Qt::SkipEmptyParts);
         if(lineItems.count() > 1) {
             lineStipple = lineItems.at(0).toInt();
             lineFactor  = lineItems.at(1).toInt();
@@ -293,7 +293,7 @@ public slots:
     }
 
     inline void setColorActive(const QString & _color) {
-        QStringList colorItem = _color.split(" ", QString::SkipEmptyParts);
+        QStringList colorItem = _color.split(" ", Qt::SkipEmptyParts);
         if(colorItem.count() == 4) {
             colorActive = "";
             colorActiveColor = QColor(colorItem.at(0).toDouble(), colorItem.at(1).toDouble(), colorItem.at(2).toDouble(), colorItem.at(3).toDouble());
@@ -303,7 +303,7 @@ public slots:
         }
     }
     inline void setColorActiveHue(const QString & _color) {
-        QStringList colorItem = _color.split(" ", QString::SkipEmptyParts);
+        QStringList colorItem = _color.split(" ", Qt::SkipEmptyParts);
         if(colorItem.count() == 4) {
             colorActive = "";
             QColor color;
@@ -325,7 +325,7 @@ public slots:
     }
 
     inline void setColorMultiply(const QString & _color) {
-        QStringList colorItem = _color.split(" ", QString::SkipEmptyParts);
+        QStringList colorItem = _color.split(" ", Qt::SkipEmptyParts);
         if(colorItem.count() == 4) {
             colorMultiply = "";
             colorMultiplyColor = QColor(colorItem.at(0).toDouble(), colorItem.at(1).toDouble(), colorItem.at(2).toDouble(), colorItem.at(3).toDouble());
@@ -335,7 +335,7 @@ public slots:
         }
     }
     inline void setColorMultiplyHue(const QString & _color) {
-        QStringList colorItem = _color.split(" ", QString::SkipEmptyParts);
+        QStringList colorItem = _color.split(" ", Qt::SkipEmptyParts);
         if(colorItem.count() == 4) {
             colorMultiply = "";
             QColor color;
@@ -357,7 +357,7 @@ public slots:
     }
 
     inline void setColorInactive(const QString & _color) {
-        QStringList colorItem = _color.split(" ", QString::SkipEmptyParts);
+        QStringList colorItem = _color.split(" ", Qt::SkipEmptyParts);
         if(colorItem.count() == 4) {
             colorInactive = "";
             colorInactiveColor = QColor(colorItem.at(0).toDouble(), colorItem.at(1).toDouble(), colorItem.at(2).toDouble(), colorItem.at(3).toDouble());
@@ -366,7 +366,7 @@ public slots:
             colorInactive = _color;
     }
     inline void setColorInactiveHue(const QString & _color) {
-        QStringList colorItem = _color.split(" ", QString::SkipEmptyParts);
+        QStringList colorItem = _color.split(" ", Qt::SkipEmptyParts);
         if(colorItem.count() == 4) {
             colorInactive = "";
             QColor color;

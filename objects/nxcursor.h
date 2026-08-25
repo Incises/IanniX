@@ -135,7 +135,7 @@ public:
         else                    return QString("%1 %2 %3").arg(timeInitialOffset).arg(timeStartOffset).arg(timeEndOffset);
     }
     inline void setOffset(const QString & offset) {
-        QStringList offsetItems = offset.split(" ", QString::SkipEmptyParts);
+        QStringList offsetItems = offset.split(" ", Qt::SkipEmptyParts);
         if(offsetItems.count() > 2) {
             timeInitialOffset = offsetItems.at(0).toDouble();
             timeStartOffset   = offsetItems.at(1).toDouble();
@@ -177,7 +177,7 @@ public:
     }
 
     inline void setStart(const QString & startStr) {
-        QStringList startItems = startStr.split(" ", QString::SkipEmptyParts);
+        QStringList startItems = startStr.split(" ", Qt::SkipEmptyParts);
 
         if(startItems.count() > 2) {
             setEasing(startItems.at(0).toInt());
@@ -213,7 +213,7 @@ public:
         return QString();
     }
     inline void setTimeFactorStr(const QString & time) {
-        QStringList timeItems = time.split(" ", QString::SkipEmptyParts);
+        QStringList timeItems = time.split(" ", Qt::SkipEmptyParts);
         if(timeItems.count() > 1) {
             if(timeItems.at(0).toLower() == "autolock") {
                 lockPathLength = true;

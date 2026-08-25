@@ -84,7 +84,7 @@ void UiHelp::statusHelp(QString _statusText) {
 void UiHelp::messageHelp(QString _messageText) {
     if(isVisible()) {
         _messageText = _messageText.replace("\\n", "<br/>");
-        QStringList messageTextsArguments = _messageText.split(" ", QString::SkipEmptyParts);
+        QStringList messageTextsArguments = _messageText.split(" ", Qt::SkipEmptyParts);
 
         quint16 radix = 0;
         HelpInfo helpInfo = Help::getHelpFor(messageTextsArguments.first());
@@ -146,7 +146,7 @@ void UiHelp::statusHelp() {
                 QString messageDescription  = messageTexts.at(i).second.description.trimmed();
                 QString messageSyntax       = messageTexts.at(i).second.syntax.trimmed();
 
-                QStringList messageTextsArguments = messageText.split(" ", QString::SkipEmptyParts);
+                QStringList messageTextsArguments = messageText.split(" ", Qt::SkipEmptyParts);
 
                 QString messageVerbose = messageText;
                 messageVerbose = messageVerbose.replace(" selection ", " <span class='hint'>&lt;object id or group&gt;</span> ");

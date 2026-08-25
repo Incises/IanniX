@@ -128,7 +128,7 @@ void InterfaceSerial::parse() {
                     command = command.remove('\r');
 
                     if(command != "")
-                        MessageManager::incomingMessage(MessageIncomming("serial", portName, 0, "", command, command.split(" ", QString::SkipEmptyParts)));
+                        MessageManager::incomingMessage(MessageIncomming("serial", portName, 0, "", command, command.split(" ", Qt::SkipEmptyParts)));
                     command = "";
                 }
                 else

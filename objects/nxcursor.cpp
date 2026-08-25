@@ -652,7 +652,7 @@ qreal NxCursor::getBoundsRect(quint16 index, bool source) const {
 }
 
 void NxCursor::setBoundsRectStr(const QString & _bounds, bool source) {
-    QStringList bounds = _bounds.split(" ", QString::SkipEmptyParts);
+    QStringList bounds = _bounds.split(" ", Qt::SkipEmptyParts);
     if(bounds.count() == 4) {
         setBoundsRect(0, bounds.at(0).toDouble(), source);
         setBoundsRect(3, bounds.at(1).toDouble(), source);

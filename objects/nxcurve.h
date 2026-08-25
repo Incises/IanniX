@@ -180,7 +180,7 @@ public:
 
 
     void setEquationStr(const QString &val) {
-        QStringList valItems = val.split(" ", QString::SkipEmptyParts);
+        QStringList valItems = val.split(" ", Qt::SkipEmptyParts);
         if(valItems.count() > 1)
             setEquation(valItems.at(0), val.mid(val.indexOf(valItems.at(1), val.indexOf(valItems.at(0))+valItems.at(0).length())).trimmed());
     }
@@ -379,7 +379,7 @@ public:
     void setText(const QString & text, const QString & family);
     void setEllipse(const NxSize & size);
     void setEllipseStr(const QString &val) {
-        QStringList valItems = val.split(" ", QString::SkipEmptyParts);
+        QStringList valItems = val.split(" ", Qt::SkipEmptyParts);
         if(valItems.count() > 1)
             setEllipse(NxSize(valItems.at(0).toDouble(), valItems.at(1).toDouble()));
     }
@@ -392,19 +392,19 @@ public:
     void translatePoint(quint16 pointIndex, const NxPoint & point);
     const QString getShiftPointAt() const { return QString(); }
     void setShiftPointAt(const QString &val) {
-        QStringList valItems = val.split(" ", QString::SkipEmptyParts);
+        QStringList valItems = val.split(" ", Qt::SkipEmptyParts);
         if(valItems.count() > 1)
             shiftPointAt(valItems.at(0).toDouble(), valItems.at(1).toDouble());
     }
     const QString getTranslate() const { return QString(); }
     void setTranslate(const QString &val) {
-        QStringList valItems = val.split(" ", QString::SkipEmptyParts);
+        QStringList valItems = val.split(" ", Qt::SkipEmptyParts);
         if(valItems.count() > 2)
             translate(NxPoint(valItems.at(0).toDouble(), valItems.at(1).toDouble(), valItems.at(2).toDouble()));
     }
     const QString getTranslatePoint() const { return QString(); }
     void setTranslatePoint(const QString &val) {
-        QStringList valItems = val.split(" ", QString::SkipEmptyParts);
+        QStringList valItems = val.split(" ", Qt::SkipEmptyParts);
         if(valItems.count() > 3)
             translatePoint(valItems.at(0).toInt(), NxPoint(valItems.at(1).toDouble(), valItems.at(2).toDouble(), valItems.at(3).toDouble()));
     }
@@ -424,7 +424,7 @@ public:
         glListRecreate = true;
     }
     inline void setResizeStr(const QString & size) {
-        QStringList sizeItems = size.split(" ", QString::SkipEmptyParts);
+        QStringList sizeItems = size.split(" ", Qt::SkipEmptyParts);
         if(sizeItems.count() > 1)
             setResize(NxSize(sizeItems.at(0).toDouble(), sizeItems.at(1).toDouble()));
     }

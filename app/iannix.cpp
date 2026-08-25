@@ -804,7 +804,7 @@ const QVariant IanniX::execute(const QString &command, ExecuteSource source, boo
     NxObjectDispatchProperty::source = source;
     NxDocument *document = getWorkingDocument();
 
-    QStringList argv = command.split(" ", QString::SkipEmptyParts);
+    QStringList argv = command.split(" ", Qt::SkipEmptyParts);
     quint16 argc = argv.count();
     if(argc > 0) {
         QString commande = argv.at(0).toLower();

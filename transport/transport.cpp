@@ -183,9 +183,9 @@ void Transport::action() {
         about->show();
     }
     else if(sender() == ui->timeEdit) {
-        QStringList transportTime = ui->timeEdit->text().split(":", QString::SkipEmptyParts);
+        QStringList transportTime = ui->timeEdit->text().split(":", Qt::SkipEmptyParts);
         if(transportTime.count() == 2) { //Retrocomp
-            QStringList transportTime2 = transportTime.at(1).split(".", QString::SkipEmptyParts);
+            QStringList transportTime2 = transportTime.at(1).split(".", Qt::SkipEmptyParts);
             if(transportTime2.count() == 2) {
                 qreal milli = transportTime2.at(1).toUInt();
                 qreal sec   = transportTime2.at(0).toUInt();
@@ -194,7 +194,7 @@ void Transport::action() {
             }
         }
         else if(transportTime.count() == 3) {
-            QStringList transportTime2 = transportTime.at(2).split(".", QString::SkipEmptyParts);
+            QStringList transportTime2 = transportTime.at(2).split(".", Qt::SkipEmptyParts);
             if(transportTime2.count() == 2) {
                 qreal milli = transportTime2.at(1).toUInt();
                 qreal sec   = transportTime2.at(0).toUInt();
@@ -227,10 +227,10 @@ void TransportCpu::run() {
         QProcess process;
         process.start("ps", QStringList() << "-eo" << "pid,pcpu,pmem,command");
         process.waitForFinished();
-        QStringList perfs = QString(process.readAllStandardOutput()).split("\n", QString::SkipEmptyParts);
+        QStringList perfs = QString(process.readAllStandardOutput()).split("\n", Qt::SkipEmptyParts);
         foreach(const QString &perf, perfs) {
             bool isPid = false;
-            QStringList perfInfos = perf.split(" ", QString::SkipEmptyParts);
+            QStringList perfInfos = perf.split(" ", Qt::SkipEmptyParts);
             for(quint16 i = 0 ; i < perfInfos.count() ; i++) {
                 const QString &perfInfo = perfInfos.at(i);
                 if((i== 0) && (perfInfo.toInt() == QCoreApplication::applicationPid()))

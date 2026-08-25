@@ -90,10 +90,10 @@ void InterfaceHttp::webSocketsNewConnection() {
 void InterfaceHttp::webSocketsProcessMessage(const QString &message) {
     QWebSocket *webSocket = qobject_cast<QWebSocket *>(sender());
     if(webSocket) {
-        QStringList commandItems = message.split(COMMAND_END, QString::SkipEmptyParts);;
+        QStringList commandItems = message.split(COMMAND_END, Qt::SkipEmptyParts);;
         QString response;
         foreach(const QString & command, commandItems)
-            response += MessageManager::incomingMessage(MessageIncomming("http", webSocket->peerAddress().toString(), webSocket->peerPort(), "", command, command.split(" ", QString::SkipEmptyParts)), true, (command != "goto"));
+            response += MessageManager::incomingMessage(MessageIncomming("http", webSocket->peerAddress().toString(), webSocket->peerPort(), "", command, command.split(" ", Qt::SkipEmptyParts)), true, (command != "goto"));
         if(!response.isEmpty())
             webSocket->sendTextMessage(response);
     }
@@ -148,9 +148,9 @@ void InterfaceHttp::parseRequest(QNetworkReply *reply) {
     if(!enable)
         return;
 
-    QStringList commandItems = QString(reply->readAll()).split(COMMAND_END, QString::SkipEmptyParts);;
+    QStringList commandItems = QString(reply->readAll()).split(COMMAND_END, Qt::SkipEmptyParts);;
     foreach(const QString & command, commandItems)
-        MessageManager::incomingMessage(MessageIncomming("http", reply->url().host(), reply->url().port(), reply->url().path(), command, command.split(" ", QString::SkipEmptyParts)));
+        MessageManager::incomingMessage(MessageIncomming("http", reply->url().host(), reply->url().port(), reply->url().path(), command, command.split(" ", Qt::SkipEmptyParts)));
 }
 
 
@@ -202,7 +202,7 @@ void InterfaceHttp::parseSocket(QTcpSocket *socket) {
 
             QString response;
             foreach(const QString & command, commands)
-                response += MessageManager::incomingMessage(MessageIncomming("http", socket->peerAddress().toString(), socket->peerPort(), url.path(), command, command.split(" ", QString::SkipEmptyParts)), true, (command != "goto")) + "\n";
+                response += MessageManager::incomingMessage(MessageIncomming("http", socket->peerAddress().toString(), socket->peerPort(), url.path(), command, command.split(" ", Qt::SkipEmptyParts)), true, (command != "goto")) + "\n";
 
             os << response;
         }

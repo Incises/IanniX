@@ -549,10 +549,10 @@ void NxCurve::setSVG2(const QString & polylineData) {
     curveType = CurveTypePoints;
     pathPoints.clear();
 
-    QStringList tokens = polylineData.split(" ", QString::SkipEmptyParts);
+    QStringList tokens = polylineData.split(" ", Qt::SkipEmptyParts);
     quint16 index = 0;
     foreach(const QString & token, tokens) {
-        QStringList tokenParams = token.split(",", QString::SkipEmptyParts);
+        QStringList tokenParams = token.split(",", Qt::SkipEmptyParts);
         if(tokenParams.count() == 2)
             setPointAt(index++, NxPoint(tokenParams.at(0).toDouble(), tokenParams.at(1).toDouble()), NxPoint(), NxPoint(), false);
     }
@@ -596,7 +596,7 @@ void NxCurve::setEllipse(const NxSize & size) {
 }
 
 void NxCurve::setText(const QString & text) {
-    QStringList textItems = text.split(" ", QString::SkipEmptyParts);
+    QStringList textItems = text.split(" ", Qt::SkipEmptyParts);
     if(textItems.count() > 1)
         setText(text.mid(text.indexOf(textItems.at(1), text.indexOf(textItems.at(0))+textItems.at(0).length())).trimmed(), textItems[0].replace("_", " "));
 }

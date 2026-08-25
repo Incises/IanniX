@@ -422,7 +422,7 @@ void UiView::gridChange() {
 
 void UiView::actionResize() {
     QSize currentSize = ui->render->size();
-    QStringList newSizes = (new UiMessageBox())->getText(tr("Viewport Resize"), tr("New viewport size:"), tr("%1 x %2").arg(currentSize.width()).arg(currentSize.height())).split("x", QString::SkipEmptyParts);
+    QStringList newSizes = (new UiMessageBox())->getText(tr("Viewport Resize"), tr("New viewport size:"), tr("%1 x %2").arg(currentSize.width()).arg(currentSize.height())).split("x", Qt::SkipEmptyParts);
     if(newSizes.count() == 2) {
         QSize newSize(newSizes.at(0).toUInt(), newSizes.at(1).toUInt());
         if((newSize.width() > 0) && (newSize.height() > 0))

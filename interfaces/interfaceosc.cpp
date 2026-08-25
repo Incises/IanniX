@@ -140,7 +140,7 @@ void InterfaceOsc::bonjourScan() {
         QMultiHash<QString, QString> params;
         QFile templateFile(file.absoluteFilePath());
         if(templateFile.open(QFile::ReadOnly)) {
-            QStringList templatesLong = QString(templateFile.readAll()).split("\n", QString::SkipEmptyParts);
+            QStringList templatesLong = QString(templateFile.readAll()).split("\n", Qt::SkipEmptyParts);
             foreach(const QString &templateLong, templatesLong) {
                 if(templateLong.startsWith("["))
                     header = templateLong.toLower();
