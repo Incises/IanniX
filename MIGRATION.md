@@ -28,7 +28,7 @@ verified clean by a full rebuild with clang against the current source tree.
 14. [OpenGL immediate mode and QGLWidget](#14-opengl-immediate-mode-and-qglwidget)
 15. [std::auto_ptr to std::unique_ptr](#15-stdauto_ptr-to-stdunique_ptr) ✅
 16. [register storage class](#16-register-storage-class) ✅
-17. [SIGNAL/SLOT macros to function pointers](#17-signalslot-macros-to-function-pointers)
+17. [SIGNAL/SLOT macros to function pointers](#17-signalslot-macros-to-function-pointers) ✅
 18. [qSort to std::sort](#18-qsort-to-stdsort) ✅
 19. [QVariant::Type enum](#19-qvarianttype-enum) ✅
 20. [Vendored libraries](#20-vendored-libraries)
@@ -291,14 +291,23 @@ vendored zeroconf headers).
 
 ## 17. SIGNAL/SLOT macros to function pointers
 
-**Status: TODO — low priority, widespread**
+**Status: DONE**
 
-The entire codebase uses string-based `connect(obj, SIGNAL(...), obj, SLOT(...))`
-syntax.  This works in both Qt5 and Qt6, so it is not a blocker, but the modern
-pointer-based form catches errors at compile time and is faster at runtime.
+All compiled project sources now use the modern pointer-based
+`connect`/`disconnect`/`QTimer::singleShot` forms.  Overloaded Qt signals
+(`QSpinBox::valueChanged`, `QComboBox::currentIndexChanged`,
+`QSocketNotifier::activated`, etc.) and overloaded project slots
+(`IanniX::timerTick`, `IanniX::actionImportSVG`, `UiRender::arrangeObjects`,
+`NxDocument::askFileOpen`, `UiView::goToFullscreen`/`actionResize`, …) use
+`qOverload`.  `misc/options.cpp` disconnect/reconnect pairs were updated to
+match the real slot arities (`guiTrigged` overloads).  After the pointer-based
+conversion exposed deprecated overloads, `QSpinBox::valueChanged(QString)` was
+replaced with `textChanged`, and `QComboBox::currentIndexChanged(QString)` with
+`currentIndexChanged(int)` plus `currentText()`.
 
-Approximately **200+ occurrences** across 22 files, with `app/iannix.cpp` (~37) and
-`gui/uiview.cpp` (~68) being the densest.
+Leftover string-based connects remain only in dead vendored `gui/qjsedit/`
+(not in `CMakeLists.txt`).  macOS-only `interfaces/zeroconf/` was converted
+as well.
 
 ### Migration path
 
@@ -308,8 +317,6 @@ connect(obj, SIGNAL(valueChanged(int)), other, SLOT(update(int)));
 // After
 connect(obj, &ClassName::valueChanged, other, &OtherClass::update);
 ```
-
-Convert file by file.
 
 ---
 
@@ -396,7 +403,7 @@ KSyntaxHighlighting definition name) at construction time.
 | 14 | OpenGL legacy | High | Partial | TODO |
 | 15 | std::auto_ptr | Low | Compiler err | ✅ DONE |
 | 16 | register keyword | Low | Compiler err | ✅ DONE |
-| 17 | SIGNAL/SLOT macros | Low | No | TODO |
+| 17 | SIGNAL/SLOT macros | Low | No | ✅ DONE |
 | 18 | qSort | Low | **Yes** | ✅ DONE |
 | 19 | QVariant::Type | Low | No | ✅ DONE |
 | 20 | Vendored libs | Varies | Indirect | Partial — qextserialport/qwebsockets/qmuparser/qrtmidi/jsedit removed; artnet and qffmpeg remain |
@@ -423,14 +430,14 @@ All fixed; the full rebuild is now warning-free:
 | Item | File(s) | Effort |
 |------|---------|--------|
 | OpenGL legacy (§14) | 7 files, ~35 `glBegin` blocks + display lists | Large — only remaining Qt6 blocker |
-| SIGNAL/SLOT macros (§17) | ~165 occurrences, 22 files | Low priority, not a blocker |
 | Vendored `interfaces/artnet/` (§20) | unused — delete or wire up | Small |
 | Vendored `gui/qffmpeg/` (§20) | optional `USE_FFMPEG` feature | High if kept |
 
 ### Recommended phases
 
 **Phase 1 — DONE.** All small Qt6 blockers and deprecation warnings are fixed;
-the Qt5 build compiles with zero warnings.
+the Qt5 build compiles with zero warnings.  SIGNAL/SLOT macros (§17) are also
+converted to function-pointer form.
 
 **Phase 2 — OpenGL modernization (§14):**
 Replace immediate-mode rendering with `QOpenGLBuffer` + `QOpenGLShaderProgram`
@@ -439,5 +446,4 @@ Replace immediate-mode rendering with `QOpenGLBuffer` + `QOpenGLShaderProgram`
 the only large item still blocking Qt6.
 
 **Phase 3 — polish:**
-Convert SIGNAL/SLOT connections to function-pointer form (§17); decide the fate
-of `artnet/` and `qffmpeg/` (§20).
+Decide the fate of `artnet/` and `qffmpeg/` (§20).

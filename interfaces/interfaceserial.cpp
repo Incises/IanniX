@@ -27,7 +27,7 @@ InterfaceSerial::InterfaceSerial(QWidget *parent) :
     ui(new Ui::InterfaceSerial) {
     ui->setupUi(this);
     port = 0;
-    connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
+    connect(ui->examples, &QAbstractButton::released, this, &InterfaceSerial::openExamples);
 
     baudrateEnum << 110 << 300 << 600 << 1200 << 2400
                  << 4800 << 9600 << 19200 << 38400 << 57600 << 115200;
@@ -53,12 +53,12 @@ InterfaceSerial::InterfaceSerial(QWidget *parent) :
     portParity.setAction(ui->parityCombo, "interfaceSerialParity");
     portStop  .setAction(ui->stopCombo,   "interfaceSerialStop");
     portFlow  .setAction(ui->flowCombo,   "interfaceSerialFlow");
-    connect(&portName,   SIGNAL(triggered(QString)), SLOT(portChanged()));
-    connect(&portBaud,   SIGNAL(triggered(qreal)),   SLOT(portChanged()));
-    connect(&portBits,   SIGNAL(triggered(qreal)),   SLOT(portChanged()));
-    connect(&portParity, SIGNAL(triggered(qreal)),   SLOT(portChanged()));
-    connect(&portStop,   SIGNAL(triggered(qreal)),   SLOT(portChanged()));
-    connect(&portFlow,   SIGNAL(triggered(qreal)),   SLOT(portChanged()));
+    connect(&portName,   &UiString::triggered, this, &InterfaceSerial::portChanged);
+    connect(&portBaud,   &UiReal::triggered,   this, &InterfaceSerial::portChanged);
+    connect(&portBits,   &UiReal::triggered,   this, &InterfaceSerial::portChanged);
+    connect(&portParity, &UiReal::triggered,   this, &InterfaceSerial::portChanged);
+    connect(&portStop,   &UiReal::triggered,   this, &InterfaceSerial::portChanged);
+    connect(&portFlow,   &UiReal::triggered,   this, &InterfaceSerial::portChanged);
 
     portBaud   = 10;
     portBits   = 3;
@@ -66,7 +66,7 @@ InterfaceSerial::InterfaceSerial(QWidget *parent) :
     portStop   = 0;
     portFlow   = 0;
 
-    connect(ui->enable, SIGNAL(toggled(bool)), SLOT(portChanged()));
+    connect(ui->enable, &QAbstractButton::toggled, this, &InterfaceSerial::portChanged);
     //Defaults: 115200 baud, 8-N-1, no flow control (set via combo indices above)
 
     timerEvent(0);
@@ -95,7 +95,7 @@ void InterfaceSerial::portChanged() {
             port->setStopBits(stopbitsEnum.at(portStop.val()));
             port->open(QIODevice::ReadWrite);
 
-            connect(port, SIGNAL(readyRead()), this, SLOT(parse()));
+            connect(port, &QSerialPort::readyRead, this, &InterfaceSerial::parse);
 
             if(port->isOpen())  ui->portCombo->setStyleSheet(ihmFeedbackOk);
             else                ui->portCombo->setStyleSheet(ihmFeedbackNok);

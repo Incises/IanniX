@@ -71,12 +71,12 @@ UiRender::UiRender(QWidget *parent, void *share) :
     mouseObjectDrag = false;
     selectedHover = 0;
     scale = 1;
-    connect(&cameraPerspective, SIGNAL(triggered(bool)), SLOT(cameraPerspectiveChanged()));
+    connect(&cameraPerspective, &UiBool::triggered, this, &UiRender::cameraPerspectiveChanged);
     cameraPerspectiveChanged();
 
     //Refresh
     timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(updateGL()));
+    connect(timer, &QTimer::timeout, this, &UiRender::updateGL);
 
     snapBeforeKeyX = Application::mouseSnapX;
     snapBeforeKeyY = Application::mouseSnapY;

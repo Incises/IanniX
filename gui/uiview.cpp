@@ -43,8 +43,8 @@ UiView::UiView(QWidget *parent) :
 
     //Helper
     help  = new UiHelp();
-    connect(&help->visibility, SIGNAL(triggered(bool)), SLOT(showHelp()));
-    connect(ui->statusBar, SIGNAL(messageChanged(QString)), help, SLOT(statusHelp(QString)));
+    connect(&help->visibility, &UiBool::triggered, this, &UiView::showHelp);
+    connect(ui->statusBar, &QStatusBar::messageChanged, help, qOverload<QString>(&UiHelp::statusHelp));
     ui->statusBar->setVisible(false);
     help->visibility.setAction(ui->actionShowHelp, "showHelp");
 
@@ -56,40 +56,40 @@ UiView::UiView(QWidget *parent) :
     QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.center() - rect().center());
 
-    connect(ui->render, SIGNAL(editingMove(NxPoint,bool,bool)), SLOT(editingMove(NxPoint,bool,bool)));
-    connect(ui->render, SIGNAL(editingStart(NxPoint)),     SLOT(editingStart(NxPoint)));
-    connect(ui->render, SIGNAL(editingStop()),             SLOT(editingStop()));
+    connect(ui->render, &UiRender::editingMove,  this, &UiView::editingMove);
+    connect(ui->render, &UiRender::editingStart, this, &UiView::editingStart);
+    connect(ui->render, &UiRender::editingStop,  this, &UiView::editingStop);
 
-    connect(ui->actionNew,               SIGNAL(triggered()), ui->render, SLOT(actionNew()));
-    connect(ui->actionClose_score,       SIGNAL(triggered()), ui->render, SLOT(actionNew()));
-    connect(ui->actionOpen,              SIGNAL(triggered()), ui->render, SLOT(actionOpen()));
-    connect(ui->actionSave,              SIGNAL(triggered()), ui->render, SLOT(actionSave()));
-    connect(ui->actionSave_score_as,     SIGNAL(triggered()), ui->render, SLOT(actionSave_as()));
-    connect(ui->actionImport_SVG,        SIGNAL(triggered()), SLOT(actionImportSVG()));
-    connect(ui->actionImport_Background, SIGNAL(triggered()), SLOT(actionImportBackground()));
-    connect(ui->actionImport_Text,       SIGNAL(triggered()), SLOT(actionImportText()));
+    connect(ui->actionNew,               &QAction::triggered, ui->render, &UiRender::actionNew);
+    connect(ui->actionClose_score,       &QAction::triggered, ui->render, &UiRender::actionNew);
+    connect(ui->actionOpen,              &QAction::triggered, ui->render, &UiRender::actionOpen);
+    connect(ui->actionSave,              &QAction::triggered, ui->render, &UiRender::actionSave);
+    connect(ui->actionSave_score_as,     &QAction::triggered, ui->render, &UiRender::actionSave_as);
+    connect(ui->actionImport_SVG,        &QAction::triggered, this, &UiView::actionImportSVG);
+    connect(ui->actionImport_Background, &QAction::triggered, this, &UiView::actionImportBackground);
+    connect(ui->actionImport_Text,       &QAction::triggered, this, &UiView::actionImportText);
 
-    connect(ui->actionRedo,              SIGNAL(triggered()), ui->render, SLOT(actionRedo()));
-    connect(ui->actionUndo,              SIGNAL(triggered()), ui->render, SLOT(actionUndo()));
-    connect(ui->actionCopy,              SIGNAL(triggered()), ui->render, SLOT(actionCopy()));
-    connect(ui->actionPaste,             SIGNAL(triggered()), ui->render, SLOT(actionPaste()));
-    connect(ui->actionDuplicate,         SIGNAL(triggered()), ui->render, SLOT(actionDuplicate()));
-    connect(ui->actionCut,               SIGNAL(triggered()), ui->render, SLOT(actionCut()));
-    connect(ui->actionSelect_all,        SIGNAL(triggered()), ui->render, SLOT(actionSelect_all()));
-    connect(ui->actionDelete,            SIGNAL(triggered()), ui->render, SLOT(actionDelete()));
-    connect(ui->actionResize,            SIGNAL(triggered()), SLOT(actionResize()));
-    connect(ui->actionSnapshot,          SIGNAL(triggered()), SLOT(actionSnapshot()));
+    connect(ui->actionRedo,              &QAction::triggered, ui->render, &UiRender::actionRedo);
+    connect(ui->actionUndo,              &QAction::triggered, ui->render, &UiRender::actionUndo);
+    connect(ui->actionCopy,              &QAction::triggered, ui->render, &UiRender::actionCopy);
+    connect(ui->actionPaste,             &QAction::triggered, ui->render, &UiRender::actionPaste);
+    connect(ui->actionDuplicate,         &QAction::triggered, ui->render, &UiRender::actionDuplicate);
+    connect(ui->actionCut,               &QAction::triggered, ui->render, &UiRender::actionCut);
+    connect(ui->actionSelect_all,        &QAction::triggered, ui->render, &UiRender::actionSelect_all);
+    connect(ui->actionDelete,            &QAction::triggered, ui->render, &UiRender::actionDelete);
+    connect(ui->actionResize,            &QAction::triggered, this, qOverload<>(&UiView::actionResize));
+    connect(ui->actionSnapshot,          &QAction::triggered, this, &UiView::actionSnapshot);
 
-    connect(ui->actionZoom_in,           SIGNAL(triggered()), ui->render, SLOT(zoomIn()));
-    connect(ui->actionZoom_out,          SIGNAL(triggered()), ui->render, SLOT(zoomOut()));
-    connect(ui->actionZoom_initial,      SIGNAL(triggered()), ui->render, SLOT(zoomInitial()));
-    connect(ui->actionAbout,             SIGNAL(triggered()), about, SLOT(show()));
-    connect(ui->actionPreferences,       SIGNAL(triggered()), ui->inspector, SLOT(showConfigTab()));
-    connect(ui->actionQuit,              SIGNAL(triggered()), SLOT(close()));
-    connect(ui->actionToggle_Inspector,  SIGNAL(triggered()), SLOT(showInspector()));
-    connect(ui->actionToggle_Transport,  SIGNAL(triggered()), SLOT(showTransport()));
-    connect(ui->actionPatchesFolder,     SIGNAL(triggered()), SLOT(actionPatchesFolder()));
-    connect(ui->actionLockPos,           SIGNAL(triggered()), SLOT(editingStop()));
+    connect(ui->actionZoom_in,           &QAction::triggered, ui->render, &UiRender::zoomIn);
+    connect(ui->actionZoom_out,          &QAction::triggered, ui->render, &UiRender::zoomOut);
+    connect(ui->actionZoom_initial,      &QAction::triggered, ui->render, &UiRender::zoomInitial);
+    connect(ui->actionAbout,             &QAction::triggered, about, &QWidget::show);
+    connect(ui->actionPreferences,       &QAction::triggered, ui->inspector, &UiInspector::showConfigTab);
+    connect(ui->actionQuit,              &QAction::triggered, this, &QWidget::close);
+    connect(ui->actionToggle_Inspector,  &QAction::triggered, this, &UiView::showInspector);
+    connect(ui->actionToggle_Transport,  &QAction::triggered, this, &UiView::showTransport);
+    connect(ui->actionPatchesFolder,     &QAction::triggered, this, &UiView::actionPatchesFolder);
+    connect(ui->actionLockPos,           &QAction::triggered, this, &UiView::editingStop);
     Application::colorTheme            .setAction(ui->actionLight,                    "guiColorTheme");
     Application::paintAxisGrid         .setAction(ui->actionGrid,                     "guiPaintAxisGrid");
     Application::paintLabel            .setAction(ui->actionToggleLabel,              "guiPaintLabel");
@@ -101,44 +101,44 @@ UiView::UiView(QWidget *parent) :
     Application::allowSelectionTriggers.setAction(ui->actionAllow_triggers_selection, "guiAllowSelectionTriggers");
     Application::allowPlaySelected     .setAction(ui->actionPlaySelected,             "guiAllowPlaySelected");
 
-    connect(ui->actionFullscreen,           SIGNAL(triggered()), SLOT(goToFullscreen()));
-    connect(ui->actionPerformance,          SIGNAL(triggered()), SLOT(actionPerformance()));
+    connect(ui->actionFullscreen,           &QAction::triggered, this, qOverload<>(&UiView::goToFullscreen));
+    connect(ui->actionPerformance,          &QAction::triggered, this, &UiView::actionPerformance);
 
-    connect(ui->actionPlay_pause,           SIGNAL(triggered()), SLOT(actionPlay_pause()));
-    connect(ui->actionFast_rewind,          SIGNAL(triggered()), SLOT(actionFast_rewind()));
+    connect(ui->actionPlay_pause,           &QAction::triggered, this, &UiView::actionPlay_pause);
+    connect(ui->actionFast_rewind,          &QAction::triggered, this, &UiView::actionFast_rewind);
 
-    connect(ui->actionDrawFreeCurve,        SIGNAL(triggered()), SLOT(actionDrawFreeCurve()));
-    connect(ui->actionDrawPointCurve,       SIGNAL(triggered()), SLOT(actionDrawPointCurve()));
-    connect(ui->actionDrawFreeCurveSimple,  SIGNAL(triggered()), SLOT(actionDrawFreeCurveSimple()));
-    connect(ui->actionDrawPointCurveSimple, SIGNAL(triggered()), SLOT(actionDrawPointCurveSimple()));
-    connect(ui->actionDrawTriggers,         SIGNAL(triggered()), SLOT(actionDrawTriggers()));
-    connect(ui->actionAddFreeCursor,        SIGNAL(triggered()), SLOT(actionAddFreeCursor()));
-    connect(ui->actionAddCircleCurve,       SIGNAL(triggered()), SLOT(actionCircleCurve()));
-    connect(ui->actionAddMathCurve,         SIGNAL(triggered()), SLOT(actionAddMathCurve()));
-    connect(ui->actionAddMathCurveSimple,   SIGNAL(triggered()), SLOT(actionAddMathCurveSimple()));
-    connect(ui->actionAddTimeline,          SIGNAL(triggered()), SLOT(actionAddTimeline()));
+    connect(ui->actionDrawFreeCurve,        &QAction::triggered, this, [this]() { actionDrawFreeCurve(); });
+    connect(ui->actionDrawPointCurve,       &QAction::triggered, this, [this]() { actionDrawPointCurve(); });
+    connect(ui->actionDrawFreeCurveSimple,  &QAction::triggered, this, &UiView::actionDrawFreeCurveSimple);
+    connect(ui->actionDrawPointCurveSimple, &QAction::triggered, this, &UiView::actionDrawPointCurveSimple);
+    connect(ui->actionDrawTriggers,         &QAction::triggered, this, &UiView::actionDrawTriggers);
+    connect(ui->actionAddFreeCursor,        &QAction::triggered, this, &UiView::actionAddFreeCursor);
+    connect(ui->actionAddCircleCurve,       &QAction::triggered, this, &UiView::actionCircleCurve);
+    connect(ui->actionAddMathCurve,         &QAction::triggered, this, &UiView::actionAddMathCurve);
+    connect(ui->actionAddMathCurveSimple,   &QAction::triggered, this, &UiView::actionAddMathCurveSimple);
+    connect(ui->actionAddTimeline,          &QAction::triggered, this, &UiView::actionAddTimeline);
 
-    connect(ui->actionShowEditor,           SIGNAL(triggered()), SLOT(showEditor()));
-    connect(ui->actionShowTimer,            SIGNAL(triggered()), SLOT(showTimer()));
-    connect(ui->actionReloadScript,         SIGNAL(triggered()), SLOT(actionReloadScript()));
+    connect(ui->actionShowEditor,           &QAction::triggered, this, &UiView::showEditor);
+    connect(ui->actionShowTimer,            &QAction::triggered, this, &UiView::showTimer);
+    connect(ui->actionReloadScript,         &QAction::triggered, this, &UiView::actionReloadScript);
 
-    connect(ui->action10Seconds,            SIGNAL(triggered()), SLOT(gridChange()));
-    connect(ui->action1second,              SIGNAL(triggered()), SLOT(gridChange()));
-    connect(ui->action500Milliseconds,      SIGNAL(triggered()), SLOT(gridChange()));
-    connect(ui->action100Milliseconds,      SIGNAL(triggered()), SLOT(gridChange()));
-    connect(ui->action10Milliseconds,       SIGNAL(triggered()), SLOT(gridChange()));
-    connect(ui->actionCustomValue,          SIGNAL(triggered()), SLOT(gridChange()));
+    connect(ui->action10Seconds,            &QAction::triggered, this, &UiView::gridChange);
+    connect(ui->action1second,              &QAction::triggered, this, &UiView::gridChange);
+    connect(ui->action500Milliseconds,      &QAction::triggered, this, &UiView::gridChange);
+    connect(ui->action100Milliseconds,      &QAction::triggered, this, &UiView::gridChange);
+    connect(ui->action10Milliseconds,       &QAction::triggered, this, &UiView::gridChange);
+    connect(ui->actionCustomValue,          &QAction::triggered, this, &UiView::gridChange);
 
-    connect(ui->actionAlign_bottom,         SIGNAL(triggered()), SLOT(actionAlign_bottom()));
-    connect(ui->actionAlign_center,         SIGNAL(triggered()), SLOT(actionAlign_center()));
-    connect(ui->actionAlign_left,           SIGNAL(triggered()), SLOT(actionAlign_left()));
-    connect(ui->actionAlign_middle,         SIGNAL(triggered()), SLOT(actionAlign_middle()));
-    connect(ui->actionAlign_right,          SIGNAL(triggered()), SLOT(actionAlign_right()));
-    connect(ui->actionAlign_top,            SIGNAL(triggered()), SLOT(actionAlign_top()));
-    connect(ui->actionDistributeH,          SIGNAL(triggered()), SLOT(actionDistributeH()));
-    connect(ui->actionDistributeV,          SIGNAL(triggered()), SLOT(actionDistributeV()));
-    connect(ui->actionAlign_circle,         SIGNAL(triggered()), SLOT(actionAlign_circle()));
-    connect(ui->actionAlign_ellipse,        SIGNAL(triggered()), SLOT(actionAlign_ellipse()));
+    connect(ui->actionAlign_bottom,         &QAction::triggered, this, &UiView::actionAlign_bottom);
+    connect(ui->actionAlign_center,         &QAction::triggered, this, &UiView::actionAlign_center);
+    connect(ui->actionAlign_left,           &QAction::triggered, this, &UiView::actionAlign_left);
+    connect(ui->actionAlign_middle,         &QAction::triggered, this, &UiView::actionAlign_middle);
+    connect(ui->actionAlign_right,          &QAction::triggered, this, &UiView::actionAlign_right);
+    connect(ui->actionAlign_top,            &QAction::triggered, this, &UiView::actionAlign_top);
+    connect(ui->actionDistributeH,          &QAction::triggered, this, &UiView::actionDistributeH);
+    connect(ui->actionDistributeV,          &QAction::triggered, this, &UiView::actionDistributeV);
+    connect(ui->actionAlign_circle,         &QAction::triggered, this, &UiView::actionAlign_circle);
+    connect(ui->actionAlign_ellipse,        &QAction::triggered, this, &UiView::actionAlign_ellipse);
 
     delete ui->renderPreview;
     ui->renderPreview = 0;
@@ -209,7 +209,7 @@ void UiView::fullscreenDisplaysCountChanged() {
         QPushButton *fullscreenButton = new QPushButton(tr("DISPLAY %1 (%2 x %3)").arg(fullscreenDisplayIndex+1).arg(geo.width()).arg(geo.height()), ui->pagePerf);
         fullscreenButton->setToolTip(tr("Moves the render window on this video output and switches to fullscreen"));
         ui->performanceLayout->addWidget(fullscreenButton);
-        connect(fullscreenButton, SIGNAL(released()), SLOT(fullscreenDisplaysSelected()));
+        connect(fullscreenButton, &QAbstractButton::released, this, &UiView::fullscreenDisplaysSelected);
         fullscreenButtons.append(fullscreenButton);
     }
 }

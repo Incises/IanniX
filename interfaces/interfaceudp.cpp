@@ -26,13 +26,13 @@ InterfaceUdp::InterfaceUdp(QWidget *parent) :
     NetworkInterface(parent),
     ui(new Ui::InterfaceUdp) {
     ui->setupUi(this);
-    connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
+    connect(ui->examples, &QAbstractButton::released, this, &InterfaceUdp::openExamples);
     socket = 0;
 
     //Interfaces link
     enable.setAction(ui->enable, "interfaceUdpEnable");
     port.setAction(ui->port,     "interfaceUdpPort");
-    connect(&port, SIGNAL(triggered(qreal)), SLOT(portChanged()));
+    connect(&port, &UiReal::triggered, this, &InterfaceUdp::portChanged);
     port = 1235;
 }
 
@@ -42,7 +42,7 @@ void InterfaceUdp::portChanged() {
         delete socket;
     socket = new QUdpSocket(this);
     socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
-    connect(socket, SIGNAL(readyRead()), SLOT(parseOSC()));
+    connect(socket, &QUdpSocket::readyRead, this, &InterfaceUdp::parseOSC);
 
     if(socket->bind(port))  ui->port->setStyleSheet(ihmFeedbackOk);
     else                    ui->port->setStyleSheet(ihmFeedbackNok);

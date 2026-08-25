@@ -28,16 +28,16 @@ InterfaceHttp::InterfaceHttp(QWidget *parent) :
     ui(new Ui::InterfaceHttp) {
     ui->setupUi(this);
 
-    connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
+    connect(ui->examples, &QAbstractButton::released, this, &InterfaceHttp::openExamples);
 
     //HTTP server
     httpServer = new InterfaceHttpServer(this);
-    connect(httpServer, SIGNAL(parseRequest(QNetworkReply*)), SLOT(parseRequest(QNetworkReply*)));
-    connect(httpServer, SIGNAL(parseSocket(QTcpSocket*)),     SLOT(parseSocket(QTcpSocket*)));
+    connect(httpServer, &InterfaceHttpServer::parseRequest, this, &InterfaceHttp::parseRequest);
+    connect(httpServer, &InterfaceHttpServer::parseSocket, this, &InterfaceHttp::parseSocket);
 
     //Websockets server
     webSocketServer = new QWebSocketServer(QStringLiteral("IanniX"), QWebSocketServer::NonSecureMode, this);
-    connect(webSocketServer, SIGNAL(newConnection()), SLOT(webSocketsNewConnection()));
+    connect(webSocketServer, &QWebSocketServer::newConnection, this, &InterfaceHttp::webSocketsNewConnection);
 
     //Html template
     QFile htmlTemplateFile(Application::pathTools.absoluteFilePath() + "/HTML Template.html");
@@ -49,17 +49,17 @@ InterfaceHttp::InterfaceHttp(QWidget *parent) :
     //Interfaces link
     enable.setAction(ui->enable, "interfaceHttpEnable");
     port.setAction(ui->port,     "interfaceHttpPort");
-    connect(&port, SIGNAL(triggered(qreal)), SLOT(portChanged()));
+    connect(&port, &UiReal::triggered, this, &InterfaceHttp::portChanged);
     port = 1236;
     webSocketsPort.setAction(ui->portWebSockets, "interfaceHttpWebSocketsPort");
-    connect(&webSocketsPort, SIGNAL(triggered(qreal)), SLOT(portWebSocketsChanged()));
+    connect(&webSocketsPort, &UiReal::triggered, this, &InterfaceHttp::portWebSocketsChanged);
     webSocketsPort = 1237;
 }
 
 InterfaceHttpServer::InterfaceHttpServer(QObject *parent) :
     QTcpServer(parent) {
     http = new QNetworkAccessManager(this);
-    connect(http, SIGNAL(finished(QNetworkReply*)), SLOT(parse(QNetworkReply*)));
+    connect(http, &QNetworkAccessManager::finished, this, &InterfaceHttpServer::parse);
 }
 
 
@@ -81,9 +81,9 @@ bool InterfaceHttpServer::portChanged(quint16 port) {
 
 void InterfaceHttp::webSocketsNewConnection() {
     QWebSocket *webSocket = webSocketServer->nextPendingConnection();
-    connect(webSocket, SIGNAL(textMessageReceived(QString)),      SLOT(webSocketsProcessMessage(QString)));
-    connect(webSocket, SIGNAL(binaryMessageReceived(QByteArray)), SLOT(webSocketsProcessBinaryMessage(QByteArray)));
-    connect(webSocket, SIGNAL(disconnected()),                    SLOT(webSocketsSocketDisconnected()));
+    connect(webSocket, &QWebSocket::textMessageReceived, this, &InterfaceHttp::webSocketsProcessMessage);
+    connect(webSocket, &QWebSocket::binaryMessageReceived, this, &InterfaceHttp::webSocketsProcessBinaryMessage);
+    connect(webSocket, &QWebSocket::disconnected, this, &InterfaceHttp::webSocketsSocketDisconnected);
     webSocketClients << webSocket;
     webSocketsUpdateConnectedClients();
 }
@@ -156,8 +156,8 @@ void InterfaceHttp::parseRequest(QNetworkReply *reply) {
 
 void InterfaceHttpServer::incomingConnection(qintptr handle) {
     QTcpSocket *socket = new QTcpSocket(this);
-    connect(socket, SIGNAL(readyRead()),    this, SLOT(readClient()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(discardClient()));
+    connect(socket, &QTcpSocket::readyRead,    this, &InterfaceHttpServer::readClient);
+    connect(socket, &QTcpSocket::disconnected, this, &InterfaceHttpServer::discardClient);
     socket->setSocketDescriptor(handle);
 }
 void InterfaceHttpServer::readClient() {

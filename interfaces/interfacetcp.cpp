@@ -26,18 +26,18 @@ InterfaceTcp::InterfaceTcp(QWidget *parent) :
     NetworkInterface(parent),
     ui(new Ui::InterfaceTcp) {
     ui->setupUi(this);
-    connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
+    connect(ui->examples, &QAbstractButton::released, this, &InterfaceTcp::openExamples);
 
     tcpServer = new InterfaceTcpServer(this);
-    connect(tcpServer, SIGNAL(updateConnectedClients()),           SLOT(updateConnectedClients()));
-    connect(tcpServer, SIGNAL(parseXml(QDomDocument,QTcpSocket*)), SLOT(parseXml(QDomDocument,QTcpSocket*)));
+    connect(tcpServer, &InterfaceTcpServer::updateConnectedClients, this, &InterfaceTcp::updateConnectedClients);
+    connect(tcpServer, &InterfaceTcpServer::parseXml, this, &InterfaceTcp::parseXml);
 
     //Interfaces link
     enable.setAction(ui->enable, "interfaceTcpEnable");
     port.setAction(ui->port,     "interfaceTcpPort");
-    connect(&port, SIGNAL(triggered(qreal)), SLOT(portChanged()));
+    connect(&port, &UiReal::triggered, this, &InterfaceTcp::portChanged);
     type.setAction(QList<QRadioButton*>() << ui->typeRaw << ui->typeXml, "interfaceTcpXml");
-    connect(&type, SIGNAL(triggered(qreal)), SLOT(typeChanged()));
+    connect(&type, &UiReal::triggered, this, &InterfaceTcp::typeChanged);
     port = 3000;
 }
 
@@ -104,8 +104,8 @@ bool InterfaceTcpServer::send(const Message &message, QStringList *messageSent) 
 
 void InterfaceTcpServer::incomingConnection(qintptr handle) {
     QTcpSocket *socket = new QTcpSocket(this);
-    connect(socket, SIGNAL(readyRead()),    this, SLOT(readClient()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(discardClient()));
+    connect(socket, &QTcpSocket::readyRead,    this, &InterfaceTcpServer::readClient);
+    connect(socket, &QTcpSocket::disconnected, this, &InterfaceTcpServer::discardClient);
     socket->setSocketDescriptor(handle);
     sockets.append(socket);
     emit(updateConnectedClients());

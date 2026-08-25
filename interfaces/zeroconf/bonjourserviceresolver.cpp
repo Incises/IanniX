@@ -71,7 +71,7 @@ void BonjourServiceResolver::resolveBonjourRecord(const BonjourRecord &record)
             emit error(kDNSServiceErr_Invalid);
         } else {
             bonjourSocket = new QSocketNotifier(sockfd, QSocketNotifier::Read, this);
-            connect(bonjourSocket, SIGNAL(activated(int)), this, SLOT(bonjourSocketReadyRead()));
+            connect(bonjourSocket, qOverload<int>(&QSocketNotifier::activated), this, &BonjourServiceResolver::bonjourSocketReadyRead);
         }
     }
 }
@@ -101,7 +101,7 @@ void BonjourServiceResolver::bonjourResolveReply(DNSServiceRef, DNSServiceFlags 
 #endif
     serviceResolver->bonjourPort = port;
     QHostInfo::lookupHost(QString::fromUtf8(hosttarget),
-                          serviceResolver, SLOT(finishConnect(const QHostInfo &)));
+                          serviceResolver, &BonjourServiceResolver::finishConnect);
 }
 
 void BonjourServiceResolver::finishConnect(const QHostInfo &hostInfo)

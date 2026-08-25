@@ -39,8 +39,8 @@ UiFileItem::UiFileItem(const QFileInfo &file, UiFileItem *_parent, QFileSystemWa
 
     if(!watcher) {
         watcher = new QFileSystemWatcher(this);
-        connect(watcher, SIGNAL(directoryChanged(QString)), SLOT(fileWatcherDirChanged(QString)));
-        connect(watcher, SIGNAL(fileChanged(QString)),      SLOT(fileWatcherFileChanged(QString)));
+        connect(watcher, &QFileSystemWatcher::directoryChanged, this, &UiFileItem::fileWatcherDirChanged);
+        connect(watcher, &QFileSystemWatcher::fileChanged,      this, &UiFileItem::fileWatcherFileChanged);
     }
     isFile = true;
     populate(file);
@@ -105,8 +105,8 @@ void UiFileItem::populate(const QFileInfo &file) {
         openInFinder.setItemSync(this);
         setIcon(0, iconFile);
     }
-    connect(&filename,     SIGNAL(triggered(QString)), SLOT(fileRename()));
-    connect(&openInFinder, SIGNAL(triggered(bool)),    SLOT(fileShowInFinder()));
+    connect(&filename,     &UiString::triggered, this, qOverload<>(&UiFileItem::fileRename));
+    connect(&openInFinder, &UiBool::triggered,   this, &UiFileItem::fileShowInFinder);
 }
 
 

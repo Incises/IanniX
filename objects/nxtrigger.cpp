@@ -170,7 +170,7 @@ void NxTrigger::trig(NxObject *cursor) {
     }
     cursorTrigged = cursor;
     MessageManager::outgoingMessage(MessageManagerDestination(this, this, cursorTrigged));
-    if(triggerOff > 0)  QTimer::singleShot(triggerOff*1000, this, SLOT(trigEnd()));
+    if(triggerOff > 0)  QTimer::singleShot(triggerOff*1000, this, &NxTrigger::trigEnd);
     else                trigEnd();
 }
 void NxTrigger::trigEnd() {

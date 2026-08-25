@@ -60,10 +60,10 @@ NxDocument::NxDocument(ApplicationCurrent *parent, UiFileItem *_fileItem) :
     QObject(parent) {
     fileItem = _fileItem;
     if(fileItem) {
-        connect(fileItem, SIGNAL(askFileClose()),  SLOT(askFileClose()));
-        connect(fileItem, SIGNAL(askFileOpen()),   SLOT(askFileOpen()));
-        connect(fileItem, SIGNAL(askFileReload()), SLOT(askFileReload()));
-        connect(fileItem, SIGNAL(askFileSave()),   SLOT(askFileSave()));
+        connect(fileItem, &UiFileItem::askFileClose,  this, &NxDocument::askFileClose);
+        connect(fileItem, &UiFileItem::askFileOpen,   this, qOverload<>(&NxDocument::askFileOpen));
+        connect(fileItem, &UiFileItem::askFileReload, this, &NxDocument::askFileReload);
+        connect(fileItem, &UiFileItem::askFileSave,   this, &NxDocument::askFileSave);
     }
     skipClose = false;
     variable = 0;

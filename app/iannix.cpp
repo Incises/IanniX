@@ -74,47 +74,47 @@ IanniX::IanniX(const QString &_projectToLoad, QObject *parent) :
     inspector = view->getInspector();
     inspector->setRender(render);
     transport = view->getTransport();
-    connect(view,   SIGNAL(forceGoto(qreal,bool)),                  SLOT(forceGoto(qreal,bool)));
-    connect(view,   SIGNAL(actionRouteReloadScript()),              SLOT(actionReloadScript()));
-    connect(view,   SIGNAL(actionRouteCloseEvent(QCloseEvent*)),    SLOT(actionCloseEvent(QCloseEvent*)));
-    connect(render, SIGNAL(actionRoutePaste()),                     SLOT(actionPaste()));
-    connect(render, SIGNAL(actionRouteCopy()),                      SLOT(actionCopy()));
+    connect(view,   &UiView::forceGoto,               this, &IanniX::forceGoto);
+    connect(view,   &UiView::actionRouteReloadScript, this, &IanniX::actionReloadScript);
+    connect(view,   &UiView::actionRouteCloseEvent,   this, &IanniX::actionCloseEvent);
+    connect(render, &UiRender::actionRoutePaste,      this, &IanniX::actionPaste);
+    connect(render, &UiRender::actionRouteCopy,       this, &IanniX::actionCopy);
     //Imports
-    connect(view,   SIGNAL(actionRouteImportSVG(QString)),          SLOT(actionImportSVG(QString)));
-    connect(render, SIGNAL(actionRouteImportSVG(QString)),          SLOT(actionImportSVG(QString)));
-    connect(render, SIGNAL(actionRouteImportBackground(QString)),   SLOT(actionImportBackground(QString)));
-    connect(view,   SIGNAL(actionRouteImportBackground(QString)),   SLOT(actionImportBackground(QString)));
-    connect(render, SIGNAL(actionRouteImportText(QString,QString)), SLOT(actionImportText(QString,QString)));
-    connect(view,   SIGNAL(actionRouteImportText(QString,QString)), SLOT(actionImportText(QString,QString)));
+    connect(view,   &UiView::actionRouteImportSVG,        this, qOverload<const QString &>(&IanniX::actionImportSVG));
+    connect(render, &UiRender::actionRouteImportSVG,      this, qOverload<const QString &>(&IanniX::actionImportSVG));
+    connect(render, &UiRender::actionRouteImportBackground, this, &IanniX::actionImportBackground);
+    connect(view,   &UiView::actionRouteImportBackground, this, &IanniX::actionImportBackground);
+    connect(render, &UiRender::actionRouteImportText,     this, &IanniX::actionImportText);
+    connect(view,   &UiView::actionRouteImportText,       this, &IanniX::actionImportText);
 
     //Transport
-    connect(transport, SIGNAL(forceOpenGLtimer(qreal)),             SLOT(forceOpenGLTimer(qreal)));
-    connect(transport, SIGNAL(forceSchedulerTimer(qreal)),          SLOT(forceSchedulerTimer(qreal)));
-    connect(Transport::editor, SIGNAL(askSave()),    SLOT(actionSaveAndReload()));
-    //connect(Transport::editor, SIGNAL(askSave()),    SLOT(actionReloadScript()));
-    connect(Transport::editor, SIGNAL(askRefresh()), SLOT(actionRefresh()));
+    connect(transport, &Transport::forceOpenGLtimer,    this, &IanniX::forceOpenGLTimer);
+    connect(transport, &Transport::forceSchedulerTimer, this, &IanniX::forceSchedulerTimer);
+    connect(Transport::editor, &UiEditor::askSave,    this, &IanniX::actionSaveAndReload);
+    //connect(Transport::editor, &UiEditor::askSave,    this, &IanniX::actionReloadScript);
+    connect(Transport::editor, &UiEditor::askRefresh, this, &IanniX::actionRefresh);
 
     //Inspector
-    connect(inspector, SIGNAL(actionRouteCC(QTreeWidgetItem*,int)), SLOT(actionCC(QTreeWidgetItem*,int)));
-    connect(inspector, SIGNAL(actionUnmuteGroups()),                SLOT(actionUnmuteGroups()));
-    connect(inspector, SIGNAL(actionUnmuteObjects()),               SLOT(actionUnmuteObjects()));
-    connect(inspector, SIGNAL(actionUnsoloGroups()),                SLOT(actionUnsoloGroups()));
-    connect(inspector, SIGNAL(actionUnsoloObjects()),               SLOT(actionUnsoloObjects()));
-    connect(inspector->getFileWidget(), SIGNAL(currentDocumentChanged(UiSyncItem*)), SLOT(currentDocumentChanged(UiSyncItem*)));
+    connect(inspector, &UiInspector::actionRouteCC,      this, &IanniX::actionCC);
+    connect(inspector, &UiInspector::actionUnmuteGroups, this, &IanniX::actionUnmuteGroups);
+    connect(inspector, &UiInspector::actionUnmuteObjects, this, &IanniX::actionUnmuteObjects);
+    connect(inspector, &UiInspector::actionUnsoloGroups, this, &IanniX::actionUnsoloGroups);
+    connect(inspector, &UiInspector::actionUnsoloObjects, this, &IanniX::actionUnsoloObjects);
+    connect(inspector->getFileWidget(), &UiTreeView::currentDocumentChanged, this, &IanniX::currentDocumentChanged);
 
     //Render
-    connect(render, SIGNAL(mousePosChanged(NxPoint)), inspector,    SLOT(setMousePos(NxPoint)));
-    connect(render, SIGNAL(mouseZoomChanged(qreal)),  inspector,    SLOT(setMouseZoom(qreal)));
-    connect(render, SIGNAL(mouseRotationChanged(NxPoint)),inspector,SLOT(setRotationAngles(NxPoint)));
-    connect(render, SIGNAL(selectionChanged()),       inspector,    SLOT(askRefresh()));
-    connect(render, SIGNAL(escFullscreen()),          view,         SLOT(escFullscreen()));
-    connect(render, SIGNAL(actionRouteNew()),                       SLOT(actionNew()));
-    connect(render, SIGNAL(actionRouteOpen()),                      SLOT(actionOpen()));
-    connect(render, SIGNAL(actionRouteSave()),                      SLOT(actionSave()));
-    connect(render, SIGNAL(actionRouteSave_as()),                   SLOT(actionSave_as()));
-    connect(render, SIGNAL(actionRouteUndo()),                      SLOT(actionUndo()));
-    connect(render, SIGNAL(actionRouteRedo()),                      SLOT(actionRedo()));
-    connect(view,   SIGNAL(arrangeObjects(quint16)),  render,       SLOT(arrangeObjects(quint16)));
+    connect(render, &UiRender::mousePosChanged,      inspector, &UiInspector::setMousePos);
+    connect(render, &UiRender::mouseZoomChanged,     inspector, &UiInspector::setMouseZoom);
+    connect(render, &UiRender::mouseRotationChanged, inspector, &UiInspector::setRotationAngles);
+    connect(render, &UiRender::selectionChanged,     inspector, &UiInspector::askRefresh);
+    connect(render, &UiRender::escFullscreen,        view,      &UiView::escFullscreen);
+    connect(render, &UiRender::actionRouteNew,       this, &IanniX::actionNew);
+    connect(render, &UiRender::actionRouteOpen,      this, &IanniX::actionOpen);
+    connect(render, &UiRender::actionRouteSave,      this, &IanniX::actionSave);
+    connect(render, &UiRender::actionRouteSave_as,   this, &IanniX::actionSave_as);
+    connect(render, &UiRender::actionRouteUndo,      this, &IanniX::actionUndo);
+    connect(render, &UiRender::actionRouteRedo,      this, &IanniX::actionRedo);
+    connect(view,   &UiView::arrangeObjects,         render, qOverload<quint16>(&UiRender::arrangeObjects));
     render->setZoom();
     render->rotateTo(NxPoint(0, 0, 0));
     inspector->setMousePos(NxPoint(0, 0));
@@ -229,7 +229,7 @@ IanniX::IanniX(const QString &_projectToLoad, QObject *parent) :
 
     //Scheduler
     timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(timerTick()));
+    connect(timer, &QTimer::timeout, this, qOverload<>(&IanniX::timerTick));
     timer->setInterval(5);
     timer->start();
     forceGoto(0);
@@ -491,7 +491,7 @@ void IanniX::timerTrig(void *object, bool force) {
 
 void IanniX::checkForUpdates() {
     updateManager = new QNetworkAccessManager(this);
-    connect(updateManager, SIGNAL(finished(QNetworkReply*)), SLOT(checkForUpdatesFinished(QNetworkReply*)));
+    connect(updateManager, &QNetworkAccessManager::finished, this, &IanniX::checkForUpdatesFinished);
     QString url = "http://www.iannix.org/download/updates.php?id=" + updateAnonymousId + "&package=" + (QCoreApplication::applicationName() + "__" + QCoreApplication::applicationVersion()).toLower().replace(" ", "_").replace(".", "_");
     qDebug("Checking for updates %s", qPrintable(url));
     updateManager->get(QNetworkRequest(QUrl(url, QUrl::TolerantMode)));
@@ -1305,7 +1305,7 @@ void IanniX::actionRedo() {
 QString IanniX::waitForMessage() {
     waitingForMessageValue = true;
     QEventLoop loop;
-    connect(this, SIGNAL(waitForMessageArrived()), &loop, SLOT(quit()));
+    connect(this, &IanniX::waitForMessageArrived, &loop, &QEventLoop::quit);
     loop.exec();
     return waitForMessageValue;
 }

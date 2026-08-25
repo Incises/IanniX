@@ -34,8 +34,8 @@ InterfaceMidi::InterfaceMidi(QWidget *parent) :
     ui(new Ui::InterfaceMidi) {
     ui->setupUi(this);
     ui->midiJack->setVisible(false);
-    connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
-    connect(ui->download, SIGNAL(released()), SLOT(downloadMidiJack()));
+    connect(ui->examples, &QAbstractButton::released, this, &InterfaceMidi::openExamples);
+    connect(ui->download, &QAbstractButton::released, this, &InterfaceMidi::downloadMidiJack);
 
     portOutName = "From IanniX";
     portInName  = "To IanniX";

@@ -70,12 +70,12 @@ bool UiBool::val()      const {     return value;    }
 void UiBool::setAction(QAction *_toolbarButton, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(toolbarButton)
-        toolbarButton->disconnect(this, SLOT(guiTrigged(bool)));
+        disconnect(toolbarButton, &QAction::triggered, this, &UiBool::guiTrigged);
     toolbarButton = _toolbarButton;
     if(toolbarButton) {
         if(changeUi)
             applyToGui();
-        toolbarButton->connect(toolbarButton, SIGNAL(triggered(bool)), this, SLOT(guiTrigged(bool)));
+        connect(toolbarButton, &QAction::triggered, this, &UiBool::guiTrigged);
         if(trigEvent)
             guiTrigged(toolbarButton->isChecked());
     }
@@ -83,12 +83,12 @@ void UiBool::setAction(QAction *_toolbarButton, const QString &_settingName, boo
 void UiBool::setAction(QCheckBox *_checkBox, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(checkBox)
-        checkBox->disconnect(this, SLOT(guiTrigged(bool)));
+        disconnect(checkBox, &QCheckBox::toggled, this, &UiBool::guiTrigged);
     checkBox = _checkBox;
     if(checkBox) {
         if(changeUi)
             applyToGui();
-        checkBox->connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(guiTrigged(bool)));
+        connect(checkBox, &QCheckBox::toggled, this, &UiBool::guiTrigged);
         if(trigEvent)
             guiTrigged(checkBox->isChecked());
     }
@@ -96,12 +96,12 @@ void UiBool::setAction(QCheckBox *_checkBox, const QString &_settingName, bool t
 void UiBool::setAction(QPushButton *_button, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(button)
-        button->disconnect(this, SLOT(guiTrigged(bool)));
+        disconnect(button, &QPushButton::toggled, this, &UiBool::guiTrigged);
     button = _button;
     if(button) {
         if(changeUi)
             applyToGui();
-        button->connect(button, SIGNAL(toggled(bool)), this, SLOT(guiTrigged(bool)));
+        connect(button, &QPushButton::toggled, this, &UiBool::guiTrigged);
         if(trigEvent)
             guiTrigged(button->isChecked());
     }
@@ -169,12 +169,12 @@ qreal UiReal::val()      const {     return value;    }
 void UiReal::setAction(QSpinBox *_spinBox, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(spinBox)
-        spinBox->disconnect(this, SLOT(guiTrigged(int)));
+        disconnect(spinBox, qOverload<int>(&QSpinBox::valueChanged), this, qOverload<int>(&UiReal::guiTrigged));
     spinBox = _spinBox;
     if(spinBox) {
         if(changeUi)
             applyToGui();
-        spinBox->connect(spinBox, SIGNAL(valueChanged(int)), this, SLOT(guiTrigged(int)));
+        connect(spinBox, qOverload<int>(&QSpinBox::valueChanged), this, qOverload<int>(&UiReal::guiTrigged));
         if(trigEvent)
             guiTrigged(spinBox->value());
     }
@@ -182,12 +182,12 @@ void UiReal::setAction(QSpinBox *_spinBox, const QString &_settingName, bool tri
 void UiReal::setAction(QDoubleSpinBox *_doubleSpinBox, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(doubleSpinBox)
-        doubleSpinBox->disconnect(this, SLOT(guiTrigged(qreal)));
+        disconnect(doubleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, qOverload<double>(&UiReal::guiTrigged));
     doubleSpinBox = _doubleSpinBox;
     if(doubleSpinBox) {
         if(changeUi)
             applyToGui();
-        doubleSpinBox->connect(doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(guiTrigged(double)));
+        connect(doubleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, qOverload<double>(&UiReal::guiTrigged));
         if(trigEvent)
             guiTrigged(doubleSpinBox->value());
     }
@@ -195,12 +195,12 @@ void UiReal::setAction(QDoubleSpinBox *_doubleSpinBox, const QString &_settingNa
 void UiReal::setAction(QSlider *_slider, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(slider)
-        slider->disconnect(this, SLOT(guiTrigged(qreal)));
+        disconnect(slider, &QSlider::valueChanged, this, qOverload<int>(&UiReal::guiTrigged));
     slider = _slider;
     if(slider) {
         if(changeUi)
             applyToGui();
-        slider->connect(slider, SIGNAL(valueChanged(int)), this, SLOT(guiTrigged(int)));
+        connect(slider, &QSlider::valueChanged, this, qOverload<int>(&UiReal::guiTrigged));
         if(trigEvent)
             guiTrigged(slider->value());
     }
@@ -208,12 +208,12 @@ void UiReal::setAction(QSlider *_slider, const QString &_settingName, bool trigE
 void UiReal::setAction(QComboBox *_comboBox, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(comboBox)
-        comboBox->disconnect(this, SLOT(guiTrigged(qreal)));
+        disconnect(comboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, qOverload<int>(&UiReal::guiTrigged));
     comboBox = _comboBox;
     if(comboBox) {
         if(changeUi)
             applyToGui();
-        comboBox->connect(comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(guiTrigged(int)));
+        connect(comboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, qOverload<int>(&UiReal::guiTrigged));
         if(trigEvent)
             guiTrigged(comboBox->currentIndex());
     }
@@ -221,13 +221,13 @@ void UiReal::setAction(QComboBox *_comboBox, const QString &_settingName, bool t
 void UiReal::setAction(const QList<QRadioButton*> &_radios, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     foreach(QRadioButton *radio, radios)
-        radio->disconnect(this, SLOT(guiTrigged(qreal)));
+        disconnect(radio, &QRadioButton::toggled, this, qOverload<bool>(&UiReal::guiTrigged));
     radios = _radios;
     if(radios.count()) {
         if(changeUi)
             applyToGui();
         foreach(QRadioButton *radio, radios)
-            radio->connect(radio, SIGNAL(toggled(bool)), this, SLOT(guiTrigged(bool)));
+            connect(radio, &QRadioButton::toggled, this, qOverload<bool>(&UiReal::guiTrigged));
 
         if(trigEvent) {
             qreal tmpVal = 0;
@@ -314,12 +314,12 @@ QString UiString::val()      const {     return value;    }
 void UiString::setAction(QSpinBox *_spin, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(spin)
-        spin->disconnect(this, SLOT(guiTrigged(QString)));
+        disconnect(spin, &QSpinBox::textChanged, this, qOverload<QString>(&UiString::guiTrigged));
     spin = _spin;
     if(spin) {
         if(changeUi)
             applyToGui();
-        spin->connect(spin, SIGNAL(valueChanged(QString)), this, SLOT(guiTrigged(QString)));
+        connect(spin, &QSpinBox::textChanged, this, qOverload<QString>(&UiString::guiTrigged));
         if(trigEvent)
             guiTrigged();
     }
@@ -327,12 +327,12 @@ void UiString::setAction(QSpinBox *_spin, const QString &_settingName, bool trig
 void UiString::setAction(QLineEdit *_edit, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(edit)
-        edit->disconnect(this, SLOT(guiTrigged(QString)));
+        disconnect(edit, &QLineEdit::textChanged, this, qOverload<QString>(&UiString::guiTrigged));
     edit = _edit;
     if(edit) {
         if(changeUi)
             applyToGui();
-        edit->connect(edit, SIGNAL(textChanged(QString)), this, SLOT(guiTrigged(QString)));
+        connect(edit, &QLineEdit::textChanged, this, qOverload<QString>(&UiString::guiTrigged));
         if(trigEvent)
             guiTrigged();
     }
@@ -340,12 +340,12 @@ void UiString::setAction(QLineEdit *_edit, const QString &_settingName, bool tri
 void UiString::setAction(QPlainTextEdit *_plainTextEdit, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(plainTextEdit)
-        plainTextEdit->disconnect(this, SLOT(guiTrigged()));
+        disconnect(plainTextEdit, &QPlainTextEdit::textChanged, this, qOverload<>(&UiString::guiTrigged));
     plainTextEdit = _plainTextEdit;
     if(plainTextEdit) {
         if(changeUi)
             applyToGui();
-        plainTextEdit->connect(plainTextEdit, SIGNAL(textChanged()), this, SLOT(guiTrigged()));
+        connect(plainTextEdit, &QPlainTextEdit::textChanged, this, qOverload<>(&UiString::guiTrigged));
         if(trigEvent)
             guiTrigged();
     }
@@ -353,13 +353,15 @@ void UiString::setAction(QPlainTextEdit *_plainTextEdit, const QString &_setting
 void UiString::setAction(QComboBox *_combo, const QString &_settingName, bool trigEvent, bool changeUi) {
     UiOptions::add(this, _settingName);
     if(combo)
-        combo->disconnect(this, SLOT(guiTrigged(QString)));
+        disconnect(combo, nullptr, this, nullptr);
     combo = _combo;
     if(combo) {
         if(changeUi)
             applyToGui();
-        combo->connect(combo, SIGNAL(currentIndexChanged(QString)), this, SLOT(guiTrigged(QString)));
-        combo->connect(combo, SIGNAL(editTextChanged(QString)),     this, SLOT(guiTrigged(QString)));
+        connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int) {
+            guiTrigged(combo->currentText());
+        });
+        connect(combo, &QComboBox::editTextChanged, this, qOverload<QString>(&UiString::guiTrigged));
         if(trigEvent)
             guiTrigged();
     }

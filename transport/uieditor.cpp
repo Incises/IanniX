@@ -34,9 +34,9 @@ UiEditor::UiEditor(QWidget *parent) :
     QRect screen = QGuiApplication::primaryScreen()->geometry();
     move(screen.bottomRight().x() - rect().width(), 20);
 
-    connect(ui->actionSave,        SIGNAL(triggered()), SLOT(save()));
-    connect(ui->actionClose,       SIGNAL(triggered()), SLOT(close()));
-    connect(ui->actionRefreshCode, SIGNAL(triggered()), SLOT(refresh()));
+    connect(ui->actionSave,        &QAction::triggered, this, &UiEditor::save);
+    connect(ui->actionClose,       &QAction::triggered, this, &UiEditor::close);
+    connect(ui->actionRefreshCode, &QAction::triggered, this, &UiEditor::refresh);
 
     ui->jsEditor->setLanguage(QStringLiteral("JavaScript"));
     ui->jsEditor->setTextWrapEnabled(false);

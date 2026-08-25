@@ -28,7 +28,8 @@ UiTreeView::UiTreeView(QWidget *parent) :
     ui->setupUi(this);
     currentDocument = 0;
     setAcceptDrops(true);
-    connect(ui->view, SIGNAL(dropEvent(QTreeWidgetItem*,QTreeWidgetItem*)), SLOT(dropEvent(QTreeWidgetItem*,QTreeWidgetItem*)));
+    connect(ui->view, qOverload<QTreeWidgetItem*, QTreeWidgetItem*>(&UiTreeViewWidget::dropEvent),
+            this, qOverload<QTreeWidgetItem*, QTreeWidgetItem*>(&UiTreeView::dropEvent));
     showNew      (true);
     showRemove   (true);
     showCopy     (true);

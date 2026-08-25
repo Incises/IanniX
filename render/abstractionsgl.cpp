@@ -196,9 +196,9 @@ void OpenGlTexture::loadFileVideo(const QString &_filename, const QSizeF &_size,
             vlcArguments.push_back(qPrintable(argument));
 
         video = new VlcPlayer(size, vlcArguments);
-        connect(video, SIGNAL(textureUpdate()), SLOT(vlcImageReady()));
-        connect(video, SIGNAL(mediaStartEvent(const libvlc_event_t*)), SLOT(vlcMediaStartEvent(const libvlc_event_t*)));
-        connect(video, SIGNAL(mediaEndEvent(const libvlc_event_t*)), SLOT(vlcMediaEndEvent(const libvlc_event_t*)));
+        connect(video, &VlcPlayer::textureUpdate, this, &OpenGlTexture::vlcImageReady);
+        connect(video, &VlcPlayer::mediaStartEvent, this, &OpenGlTexture::vlcMediaStartEvent);
+        connect(video, &VlcPlayer::mediaEndEvent, this, &OpenGlTexture::vlcMediaEndEvent);
     }
     video->setUrl(QUrl::fromLocalFile(_filename), inLoop);
 #else

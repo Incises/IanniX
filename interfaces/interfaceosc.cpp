@@ -27,13 +27,13 @@ InterfaceOsc::InterfaceOsc(QWidget *parent) :
     NetworkInterface(parent),
     ui(new Ui::InterfaceOsc) {
     ui->setupUi(this);
-    //connect(ui->examples, SIGNAL(released()), SLOT(openExamples()));
+    //connect(ui->examples, &QAbstractButton::released, this, &InterfaceOsc::openExamples);
     socket = 0;
 
     bonjourMenu = new QMenu(this);
-    connect(ui->bonjour,       SIGNAL(released()), SLOT(openBonjour()));
-    connect(ui->bonjourBundle, SIGNAL(released()), SLOT(openBonjour()));
-    connect(ui->bonjourPortIn, SIGNAL(released()), SLOT(openBonjour()));
+    connect(ui->bonjour,       &QAbstractButton::released, this, &InterfaceOsc::openBonjour);
+    connect(ui->bonjourBundle, &QAbstractButton::released, this, &InterfaceOsc::openBonjour);
+    connect(ui->bonjourPortIn, &QAbstractButton::released, this, &InterfaceOsc::openBonjour);
 #ifdef ZEROCONF_AS_BROWSER
     bonjourListCurrent = -1;
     bonjourResolver = 0;
@@ -55,10 +55,10 @@ InterfaceOsc::InterfaceOsc(QWidget *parent) :
     bundlePort.setAction(ui->bundlePort, "interfaceOscBundlePort");
     port.setAction(ui->port,             "interfaceOscPort");
     bundleHost.setAction(ui->bundleIp,   "interfaceOscBundleHost");
-    connect(&port, SIGNAL(triggered(qreal)), SLOT(portChanged()));
+    connect(&port, &UiReal::triggered, this, &InterfaceOsc::portChanged);
     MessageManager::aliases["ip_out"]  .setAction(ui->aliasIp,   "interfaceOscOutIp");
     MessageManager::aliases["port_out"].setAction(ui->aliasPort, "interfaceOscOutPort");
-    connect(&MessageManager::aliases["port_out"], SIGNAL(triggered(QString)), SLOT(portOutChanged()));
+    connect(&MessageManager::aliases["port_out"], &UiString::triggered, this, &InterfaceOsc::portOutChanged);
     MessageManager::aliases["ip_out"]   = "127.0.0.1";
     MessageManager::aliases["port_out"] = "57120";
     port = 1234;
@@ -71,7 +71,7 @@ void InterfaceOsc::portChanged() {
     if(socket)
         delete socket;
     socket = new QUdpSocket(this);
-    //connect(socket, SIGNAL(readyRead()), SLOT(parseOSC()));
+    //connect(socket, &QUdpSocket::readyRead, this, &InterfaceOsc::parseOSC);
 
     if(socket->bind(port))  ui->port->setStyleSheet(ihmFeedbackOk);
     else                    ui->port->setStyleSheet(ihmFeedbackNok);
@@ -114,7 +114,8 @@ void InterfaceOsc::bonjourRecordResolved() {
             if(bonjourServices.at(i).port == 0) {
                 bonjourListCurrent = i;
                 bonjourResolver = new BonjourServiceResolver(this);
-                connect(bonjourResolver, SIGNAL(bonjourRecordResolved(const QHostInfo &, int)), this, SLOT(bonjourRecordResolved(const QHostInfo &, int)));
+                connect(bonjourResolver, &BonjourServiceResolver::bonjourRecordResolved,
+                        this, qOverload<const QHostInfo &, int>(&InterfaceOsc::bonjourRecordResolved));
                 bonjourResolver->resolveBonjourRecord(bonjourServices.at(i).record);
                 return;
             }
@@ -201,14 +202,15 @@ void InterfaceOsc::bonjourScan() {
     if(!bonjourIsScanning) {
         //qDebug("> %d Scan Bonjour", QDateTime::currentDateTime().currentMSecsSinceEpoch());
         bonjourBrowser = new BonjourServiceBrowser(this);
-        connect(bonjourBrowser, SIGNAL(currentBonjourRecordsChanged(const QList<BonjourRecord> &)), SLOT(currentBonjourRecordsChanged(const QList<BonjourRecord> &)));
+        connect(bonjourBrowser, &BonjourServiceBrowser::currentBonjourRecordsChanged,
+                this, &InterfaceOsc::currentBonjourRecordsChanged);
         bonjourBrowser->browseForServiceType("_osc._udp");
         bonjourIsScanning = true;
     }
 #endif
 
     std::sort(bonjourServices.begin(), bonjourServices.end(), BonjourService::sort);
-    QTimer::singleShot(5000, this, SLOT(bonjourScan()));
+    QTimer::singleShot(5000, this, &InterfaceOsc::bonjourScan);
 }
 void InterfaceOsc::openBonjour() {
     bonjourMenu->clear();

@@ -494,7 +494,7 @@ void UiInspector::refreshIp() {
         ui->myIP->setVisible(false);
         ui->myIPLabel->setVisible(false);
     }
-    QTimer::singleShot(5000, this, SLOT(refreshIp()));
+    QTimer::singleShot(5000, this, &UiInspector::refreshIp);
 }
 
 void UiInspector::refresh() {
