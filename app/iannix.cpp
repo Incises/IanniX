@@ -35,7 +35,10 @@ IanniX::IanniX(const QString &_projectToLoad, QObject *parent) :
     NxObject::widgetIconSoloOff   = QIcon(":gui/res_icon_check_solo_off.png");
     NxObject::widgetIconSoloOn    = QIcon(":gui/res_icon_check_solo_on.png");
 
-    OpenGlDrawing::dpi = QWindow().devicePixelRatio();
+    if(QScreen *screen = QGuiApplication::primaryScreen())
+        OpenGlDrawing::dpi = screen->devicePixelRatio();
+    else
+        OpenGlDrawing::dpi = 1.;
     Render::textures   = new UiTextureItems();
     Render::colors     = new UiColorItems();
 #ifdef Q_OS_MAC

@@ -20,12 +20,40 @@
 */
 
 #include <QFontDatabase>
+#include <QGuiApplication>
+#include <QProxyStyle>
+#include <QStyleFactory>
+#include <QStyleOption>
 #include "iannixapp.h"
 #include "misc/help.h"
 #include "misc/options.h"
 #include "gui/uisplashscreen.h"
 
 namespace {
+
+class CompactIconStyle : public QProxyStyle {
+public:
+    explicit CompactIconStyle(QStyle *baseStyle)
+        : QProxyStyle(baseStyle) {}
+
+    int pixelMetric(PixelMetric metric, const QStyleOption *option = nullptr,
+                    const QWidget *widget = nullptr) const override {
+        // Action icons in resources are 128px (retina assets). Keep menu /
+        // toolbar layout sizes compact under High DPI instead of using the
+        // source pixel size as the layout size.
+        switch (metric) {
+        case PM_SmallIconSize:
+            return 16;
+        case PM_ToolBarIconSize:
+        case PM_ButtonIconSize:
+            return 22;
+        case PM_LargeIconSize:
+            return 32;
+        default:
+            return QProxyStyle::pixelMetric(metric, option, widget);
+        }
+    }
+};
 
 QString normalizedPath(const QString &path) {
     const QString canonicalPath = QFileInfo(path).canonicalFilePath();
@@ -84,10 +112,26 @@ QFileInfo resolveApplicationRoot(const QFileInfo &examplesDir, const QFileInfo &
 
 
 int main(int argc, char *argv[]) {
-    IanniXApp iannixApp(argc, argv);
+    // High-DPI attributes must be set before QApplication is constructed.
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
 
-    qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
-    qApp->setAttribute(Qt::AA_ShareOpenGLContexts);
+    IanniXApp iannixApp(argc, argv);
+#ifdef Q_OS_LINUX
+    // The GTK2 style plugin (system default on this distro) predates High DPI
+    // and renders menus with oversized rows and squashed icons on 2x displays.
+    // Fusion is HiDPI-safe; the UI is skinned by its own stylesheets anyway.
+    iannixApp.setStyle(new CompactIconStyle(QStyleFactory::create(QStringLiteral("Fusion"))));
+#else
+    iannixApp.setStyle(new CompactIconStyle(iannixApp.style()));
+#endif
 
     //QString locale = QLocale::system().name();
     //QTranslator translator;
@@ -198,7 +242,7 @@ void IanniXApp::launch(int &argc, char **argv) {
     }
 
     //Add font
-    if(QFontDatabase::addApplicationFont(Application::pathTools.absoluteFilePath() + "/Museo.ttf"))
+    if(QFontDatabase::addApplicationFont(Application::pathTools.absoluteFilePath() + "/Museo.ttf") == -1)
         qDebug("Loading IanniX font failed : %s", qPrintable(Application::pathTools.absoluteFilePath() + "/Museo.ttf"));
     //List of fonts
     if(false) {

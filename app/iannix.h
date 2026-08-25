@@ -38,6 +38,8 @@
 #include <QFontDialog>
 #include <QWaitCondition>
 #include <QDomDocument>
+#include <QScreen>
+#include <QGuiApplication>
 #include <QFileOpenEvent>
 #include <QDesktopServices>
 #include <QWindow>
