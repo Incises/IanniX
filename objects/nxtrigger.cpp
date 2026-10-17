@@ -23,14 +23,27 @@
 #include "render/gl/glpainter.h"
 #include "render/gl/glgeom.h"
 
+#include <QCoreApplication>
 #include <QtMath>
 
-GlMesh NxTrigger::s_meshFill;
-GlMesh NxTrigger::s_meshOutline;
+std::unique_ptr<GlMesh> NxTrigger::s_meshFill;
+std::unique_ptr<GlMesh> NxTrigger::s_meshOutline;
 
 void NxTrigger::ensureMeshes()
 {
-    if (!s_meshFill.isEmpty() && !s_meshOutline.isEmpty() && !s_meshFill.isDirty())
+    if (!s_meshFill) {
+        s_meshFill = std::make_unique<GlMesh>();
+        s_meshOutline = std::make_unique<GlMesh>();
+        // Even an empty Qt VAO queries thread-local OpenGL state in its
+        // destructor. Destroy the wrappers before QApplication shuts down,
+        // rather than leaving them to static destruction after main().
+        QObject::connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit,
+                         QCoreApplication::instance(), [] {
+            s_meshOutline.reset();
+            s_meshFill.reset();
+        });
+    }
+    if (!s_meshFill->isEmpty() && !s_meshOutline->isEmpty() && !s_meshFill->isDirty())
         return;
 
     QVector<float> fill;
@@ -41,8 +54,8 @@ void NxTrigger::ensureMeshes()
         GlGeom::appendXYZ(fill, 0.5f * c, 0.5f * s, 0.f);
         GlGeom::appendXYZ(outline, 1.2f * c, 1.2f * s, 0.f);
     }
-    s_meshFill.upload(GL_TRIANGLE_FAN, fill, fill.size() / 3);
-    s_meshOutline.upload(GL_LINE_LOOP, outline, outline.size() / 3);
+    s_meshFill->upload(GL_TRIANGLE_FAN, fill, fill.size() / 3);
+    s_meshOutline->upload(GL_LINE_LOOP, outline, outline.size() / 3);
 }
 
 NxTrigger::NxTrigger(ApplicationCurrent *parent, QTreeWidgetItem *ccParentItem) :
@@ -170,9 +183,9 @@ void NxTrigger::paint() {
             ensureMeshes();
             g->scale(float(cacheSize), float(cacheSize), float(cacheSize));
             g->setLineWidth(float(OpenGlDrawing::dpi * size));
-            s_meshFill.draw(g);
+            s_meshFill->draw(g);
             g->setLineWidth(float(OpenGlDrawing::dpi * 1.5));
-            s_meshOutline.draw(g);
+            s_meshOutline->draw(g);
             g->setLineWidth(float(OpenGlDrawing::dpi));
         }
 

@@ -24,6 +24,9 @@
 #include <QProxyStyle>
 #include <QStyleFactory>
 #include <QStyleOption>
+#include <QSurfaceFormat>
+#include <QSettings>
+#include <QStandardPaths>
 #include "iannixapp.h"
 #include "misc/help.h"
 #include "misc/options.h"
@@ -122,6 +125,22 @@ int main(int argc, char *argv[]) {
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
+    const QString documentsPath = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation).value(0);
+    if (!documentsPath.isEmpty()) {
+        QSettings graphicsSettings(documentsPath + "/IanniX/Settings.ini", QSettings::IniFormat);
+        bool validSamples = false;
+        const int requestedSamples = graphicsSettings.value("msaaSamples", 4).toInt(&validSamples);
+        if (validSamples && (requestedSamples == 0 || requestedSamples == 2 ||
+                             requestedSamples == 4 || requestedSamples == 8))
+            Application::msaaSamples = requestedSamples;
+    }
+    {
+        QSurfaceFormat glFormat;
+        glFormat.setVersion(3, 3);
+        glFormat.setProfile(QSurfaceFormat::CoreProfile);
+        glFormat.setSamples(Application::msaaSamples);
+        QSurfaceFormat::setDefaultFormat(glFormat);
+    }
 
     IanniXApp iannixApp(argc, argv);
 #ifdef Q_OS_LINUX

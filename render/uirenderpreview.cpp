@@ -31,12 +31,7 @@ UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
 UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
     QOpenGLWidget(parent) {
     Q_UNUSED(shared);
-    QSurfaceFormat sf;
-    // Match main render: OpenGL 3.3 Core (MIGRATION.md §14).
-    sf.setVersion(3, 3);
-    sf.setProfile(QSurfaceFormat::CoreProfile);
-    sf.setSamples(qMax(0, int(4. / devicePixelRatioFScale())));
-    setFormat(sf);
+    // Inherits the app-wide format and MSAA level from main().
 #endif
     setFocusPolicy(Qt::StrongFocus);
     render = 0;

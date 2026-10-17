@@ -244,11 +244,10 @@ void UiRender::setPerformanceMode(bool _performanceMode) {
 void UiRender::initializeGL() {
     QOpenGLFunctions glFuncs(QOpenGLContext::currentContext());
 
-    // Multisample antialiasing comes from QSurfaceFormat::setSamples.
-    // Fixed-pipeline POINT/LINE/POLYGON_SMOOTH are not available in Core.
     glFuncs.glEnable(GL_BLEND);
     glFuncs.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glFuncs.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glFuncs.glEnable(GL_MULTISAMPLE);
 
     if (!GlPainter::instance()->initialize())
         qWarning("UiRender: GlPainter initialization failed");
@@ -441,6 +440,10 @@ void UiRender::paintGL() {
 #endif
         }
         painter->popMatrix();
+
+        // Resolve the offscreen MSAA target before copies / grabs that read
+        // the widget framebuffer.
+        painter->resolveMsaa();
 
 #ifdef FFMPEG_INSTALLED
         if(videoEncoder.isOk())

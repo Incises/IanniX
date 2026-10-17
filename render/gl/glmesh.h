@@ -23,6 +23,8 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QVector>
+#include <QMatrix4x4>
+#include <QVector2D>
 #include <QtGui/qopengl.h>
 
 class GlPainter;
@@ -30,8 +32,9 @@ class GlPainter;
 /**
  * Cached GPU geometry replacing OpenGL display lists.
  *
- * Upload interleaved position (or pos+uv) data once; draw() binds the VBO/VAO
- * and applies GlPainter uniforms. C-tier batching can later share a single
+ * Upload interleaved position (or pos+uv) data; draw() binds the VBO/VAO and
+ * applies GlPainter uniforms. Wide-line adjacency is cached per view.
+ * C-tier batching can later share a single
  * draw pass across many GlMesh instances.
  */
 class GlMesh {
@@ -42,26 +45,41 @@ public:
     void destroy(); // safe if never initialized
     void setDirty(bool dirty = true) { m_dirty = dirty; }
     bool isDirty() const { return m_dirty; }
-    bool isEmpty() const { return m_vertexCount == 0; }
+    bool isEmpty() const { return m_hasThinLine ? m_thinVertexCount == 0 : m_vertexCount == 0; }
 
     // Upload position-only mesh (stride 3 floats)
     void upload(GLenum mode, const QVector<float> &interleavedPos, int vertexCount);
     // Upload pos or pos+uv mesh (stride 3 or 5 floats)
-    void upload(GLenum mode, const QVector<float> &interleavedPosUv, int vertexCount, bool hasUv);
+    // Set joinLinePairs for ordered curve fragments whose matching endpoints join.
+    void upload(GLenum mode, const QVector<float> &interleavedPosUv, int vertexCount, bool hasUv,
+                bool joinLinePairs = false);
 
-    void draw(GlPainter *painter) const;
+    void draw(GlPainter *painter);
 
 private:
     void ensureCreated();
+    void uploadThinLine(GLenum mode, const float *data, int vertexCount);
     void uploadInternal(GLenum mode, const float *data, int floatCount, int vertexCount, bool hasUv);
 
     mutable bool m_initialized;
     bool m_dirty;
     bool m_hasUv;
+    bool m_hasThinLine;
+    bool m_thinInitialized;
     GLenum m_mode;
     int m_vertexCount;
+    GLenum m_thinMode;
+    int m_thinVertexCount;
+    QVector<float> m_linePositions;
+    QVector<quint8> m_projectedLineMask;
+    bool m_joinLinePairs = false;
+    bool m_projectedAdjacencyValid = false;
+    QMatrix4x4 m_adjacencyMvp;
+    QVector2D m_adjacencyViewport;
     mutable QOpenGLBuffer m_vbo;
     mutable QOpenGLVertexArrayObject m_vao;
+    mutable QOpenGLBuffer m_thinVbo;
+    mutable QOpenGLVertexArrayObject m_thinVao;
 };
 
 #endif // GLMESH_H

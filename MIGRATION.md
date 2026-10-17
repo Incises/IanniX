@@ -264,11 +264,24 @@ not a Qt6 API blocker.
 
 ### Wide lines
 
-Core profile removed `glLineWidth > 1` (`GL_INVALID_VALUE`). Line primitives
-with width > 1 are expanded into screen-space quads by a geometry shader
-(`kWideLineGeom`); widths ≤ 1 use the regular line pipeline. Verified against
-Examples on a 2x display: grid, curves, triggers and cursors match or exceed
-the legacy renderer (whose display-list path fails on modern Mesa).
+Core profile removed `glLineWidth > 1` (`GL_INVALID_VALUE`). Lines wider than
+1px are expanded into screen-space capsules by a geometry shader
+(`kWideLineGeom`); 1px untextured lines use ordinary line rasterization and
+the selected MSAA. Static line meshes keep raw and adjacency VBOs and choose
+between them at draw time. Wide-line adjacency skips consecutive projected
+degenerate segments without bridging topology gaps. Static meshes retain CPU
+positions and cache the projected-degenerate segment mask. MVP or viewport
+changes recheck this mask; the wide-line VBO is rebuilt only when the mask or
+source geometry changes. The Graphics preferences tab selects
+Off / 2x / 4x / 8x (default 4x); this choice is read before `QApplication`
+creates any OpenGL context, then applied through the global `QSurfaceFormat` to
+both render widgets. If the widget FBO provides fewer samples than requested,
+`GlPainter` can use an offscreen MSAA FBO at the selected level or a lower
+supported level, then blit to the original draw FBO and viewport. The app only
+requests levels at or below the selected value; a graphics driver may grant a
+different actual sample count. Do not divide sample counts by
+`devicePixelRatioFScale()` (that Qt helper is `1<<16`, not the screen DPR). No
+depth buffer is requested because current rendering does not use depth testing.
 
 ### Line stipple
 

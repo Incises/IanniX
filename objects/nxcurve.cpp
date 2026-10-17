@@ -222,7 +222,7 @@ void NxCurve::paint() {
 
             if(curveType == CurveTypeEllipse) {
                 QVector<float> strip;
-                for(qreal angle = 0 ; angle <= 2*M_PI ; angle += 0.1)
+                for(qreal angle = 0 ; angle <= 2*M_PI ; angle += 0.04)
                     GlGeom::appendXYZ(strip, float(shapeSize.width() * qCos(angle)), float(shapeSize.height() * qSin(angle)), 0.f);
                 appendStripDashed(strip, true);
             }
@@ -270,7 +270,8 @@ void NxCurve::paint() {
                     }
                 }
             }
-            meshCurve.upload(GL_LINES, lines, lines.size() / 3);
+            // Dashed strips retain adjacency within each continuous fragment.
+            meshCurve.upload(GL_LINES, lines, lines.size() / 3, false, true);
             if(glListRecreateFromEditor)
                 curveNeedUpdate = true;
             if((glListRecreate) && (pathPointsEditor) && (pathPointsEditor->isVisible()))

@@ -180,6 +180,7 @@ IanniX::IanniX(const QString &_projectToLoad, QObject *parent) :
         //UiOptions
         foreach(UiOption *option, UiOptions::options)
             iniSettings->setValue(option->settingName, option->variant());
+        iniSettings->setValue("msaaSamples", Application::msaaSamples);
 
         //Colors
         iniSettings->beginGroup("Colors");
@@ -1278,6 +1279,12 @@ void IanniX::actionCloseEvent(QCloseEvent *event) {
         else if(rep == QMessageBox::Save)
             actionSave();
     }
+
+    // Stop playback before closing windows and clearing protocol interfaces.
+    // Closing a window can leave the event loop running until the last window
+    // is gone, so the playback timer must not keep sending during teardown.
+    timer->stop();
+    setScheduler(SchedulerOff);
 
     //Save settings
     if(iniSettings) {

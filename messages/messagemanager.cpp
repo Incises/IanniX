@@ -108,10 +108,13 @@ void MessageManager::outgoingMessage(const MessageManagerDestination &destinatio
                 messagesCache.insert(messagePattern.at(0), message);
             }
             if(message.parse(messagePattern, destination)) {
+                NetworkInterface *networkInterface = interfaces.value(message.getType(), nullptr);
+                if (!networkInterface)
+                    continue;
                 if(((NxObject*)destination.object)->getSelectedHover())
-                    interfaces[message.getType()]->send(message, &sentMessages);
+                    networkInterface->send(message, &sentMessages);
                 else
-                    interfaces[message.getType()]->send(message);
+                    networkInterface->send(message);
             }
         }
         if((((NxObject*)destination.object)->getSelectedHover()) && (sentMessages.count()))

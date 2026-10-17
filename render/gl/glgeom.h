@@ -21,7 +21,10 @@
 #define GLGEOM_H
 
 #include <QVector>
+#include <QMatrix4x4>
+#include <QVector2D>
 #include <QtMath>
+#include <QtGui/qopengl.h>
 
 /**
  * Small CPU geometry helpers for GlPainter / GlMesh (Bezier sample, line dash).
@@ -49,9 +52,14 @@ inline void sampleCubicBezier(QVector<float> &out,
                               float c1x, float c1y, float c1z,
                               float c2x, float c2y, float c2z,
                               float p2x, float p2y, float p2z,
-                              float step = 0.02f)
+                              float step = 0.008f)
 {
-    for (float t = 0.f; t <= 1.f + step * 0.5f; t += step) {
+    // Integer stepping so t hits exactly 0 and 1: the first/last samples are
+    // then bit-identical to p1/p2, letting GlPainter join consecutive curve
+    // segments without a seam.
+    const int steps = qMax(1, qRound(1.f / step));
+    for (int i = 0; i <= steps; ++i) {
+        const float t = float(i) / float(steps);
         const float u = 1.f - t;
         const float uu = u * u;
         const float tt = t * t;
@@ -121,15 +129,193 @@ inline void dashifyStrip(QVector<float> &outLines, const QVector<float> &strip,
             const qreal t1 = qMin(len, t0 + piece);
             const int bit = int(dist / fac) % 16;
             if ((pattern >> bit) & 1) {
-                const qreal u0 = t0 / len, u1 = t1 / len;
+                // Reuse the exact vertices at segment ends so a dash spanning
+                // a strip vertex stays joined (see toLineAdjacency).
+                auto lerp = [&](qreal t, int k) {
+                    if (t <= 0.)
+                        return a[k];
+                    if (t >= len)
+                        return b[k];
+                    const qreal d[3] = {dx, dy, dz};
+                    return float(a[k] + d[k] * (t / len));
+                };
                 appendLine(outLines,
-                           float(a[0] + dx * u0), float(a[1] + dy * u0), float(a[2] + dz * u0),
-                           float(a[0] + dx * u1), float(a[1] + dy * u1), float(a[2] + dz * u1));
+                           lerp(t0, 0), lerp(t0, 1), lerp(t0, 2),
+                           lerp(t1, 0), lerp(t1, 1), lerp(t1, 2));
             }
             dist += (t1 - t0);
             t0 = t1;
         }
     }
+}
+
+// Share segment ordering between projection classification and adjacency.
+template<typename Visitor>
+inline void forEachLineSegment(GLenum mode, const float *data, int stride,
+                               int vertexCount, Visitor visit)
+{
+    auto add = [&](int a, int b) {
+        const float *p = data + a * stride, *q = data + b * stride;
+        if (p[0] != q[0] || p[1] != q[1] || p[2] != q[2])
+            visit(a, b);
+    };
+    if (mode == GL_LINES) {
+        for (int i = 0; i + 1 < vertexCount; i += 2)
+            add(i, i + 1);
+    } else {
+        for (int i = 0; i + 1 < vertexCount; ++i)
+            add(i, i + 1);
+        if (mode == GL_LINE_LOOP && vertexCount >= 3)
+            add(vertexCount - 1, 0);
+    }
+}
+
+/** Classify projected segments without constructing expanded adjacency data. */
+inline QVector<quint8> projectedLineMask(GLenum mode, const float *data, int stride,
+                                         int vertexCount, const QMatrix4x4 &mvp,
+                                         const QVector2D &viewport)
+{
+    QVector<quint8> collapsed;
+    if (!data || stride < 3 || vertexCount < 2)
+        return collapsed;
+    collapsed.reserve(mode == GL_LINES ? vertexCount / 2 : vertexCount);
+    auto project = [&](int i) {
+        const float *p = data + i * stride;
+        return mvp * QVector4D(p[0], p[1], p[2], 1.f);
+    };
+    forEachLineSegment(mode, data, stride, vertexCount, [&](int a, int b) {
+        const QVector4D ca = project(a), cb = project(b);
+        bool skip = false;
+        // Do not collapse segments crossing or behind the camera plane.
+        if (ca.w() > 0.f && cb.w() > 0.f) {
+            const QVector2D delta((cb.x()/cb.w() - ca.x()/ca.w()) * viewport.x() * .5f,
+                                  (cb.y()/cb.w() - ca.y()/ca.w()) * viewport.y() * .5f);
+            skip = delta.length() < 1e-4f;
+        }
+        collapsed.append(quint8(skip));
+    });
+    return collapsed;
+}
+
+/**
+ * Rewrite a GL_LINES / GL_LINE_STRIP / GL_LINE_LOOP vertex array as
+ * GL_LINES_ADJACENCY (prev, a, b, next per segment) for the wide-line
+ * geometry shader. Each output vertex contains its original `stride` floats
+ * (xyz first), followed by xyz for one farther point on each side. The
+ * geometry shader uses those farther points to skip one screen-degenerate
+ * neighbour while preserving distance competition across the joint.
+ *
+ * Segments with matching endpoints are treated as joined, including a closing
+ * last-to-first segment. GL_LINES pairs remain independent unless joinLinePairs
+ * is enabled for ordered curve fragments; gaps still mark free ends.
+ * Zero-length segments are dropped.
+ * With an MVP and viewport, skip entire runs of screen-degenerate segments
+ * while following the original connections. A caller may supply a mask from
+ * projectedLineMask for the same geometry to avoid classifying it twice.
+ */
+inline QVector<float> toLineAdjacency(GLenum mode, const float *data, int stride, int vertexCount,
+                                     bool joinLinePairs = false,
+                                     const QMatrix4x4 *mvp = nullptr,
+                                     const QVector2D &viewport = QVector2D(),
+                                     const QVector<quint8> *projectedMask = nullptr)
+{
+    QVector<float> out;
+    if (!data || stride < 3 || vertexCount < 2)
+        return out;
+
+    struct Seg { int a, b; };
+    QVector<Seg> segs;
+    auto samePos = [&](int i, int j) {
+        const float *p = data + i * stride;
+        const float *q = data + j * stride;
+        return p[0] == q[0] && p[1] == q[1] && p[2] == q[2];
+    };
+    forEachLineSegment(mode, data, stride, vertexCount,
+                       [&](int a, int b) { segs.append({a, b}); });
+
+    const int n = segs.size();
+    if (n == 0)
+        return out;
+    const bool closed = n >= 3 && samePos(segs[n - 1].b, segs[0].a);
+
+    // Keep topology in object space: coincident screen positions alone must
+    // never connect independent fragments or bridge a dash gap.
+    const QVector<quint8> collapsed = projectedMask ? *projectedMask
+        : mvp ? projectedLineMask(mode, data, stride, vertexCount, *mvp, viewport)
+              : QVector<quint8>(n, 0);
+    Q_ASSERT(collapsed.size() == n);
+    auto neighbour = [&](int j, int step) {
+        if (mode == GL_LINES && !joinLinePairs)
+            return -1;
+        int current = j;
+        for (int count = 0; count < n; ++count) {
+            int candidate = current + step;
+            if (candidate < 0 || candidate >= n) {
+                if (!closed)
+                    return -1;
+                candidate = (candidate + n) % n;
+            }
+            if (candidate == j)
+                return -1;
+            const bool connected = step < 0
+                ? samePos(segs[candidate].b, segs[current].a)
+                : samePos(segs[current].b, segs[candidate].a);
+            if (!connected)
+                return -1;
+            if (!collapsed[candidate])
+                return candidate;
+            current = candidate;
+        }
+        return -1;
+    };
+
+    out.reserve(n * 4 * (stride + 6));
+    auto appendVert = [&](int i, int farPrev, int farNext) {
+        const float *p = data + i * stride;
+        for (int k = 0; k < stride; ++k)
+            out.append(p[k]);
+        const float *pFarPrev = data + farPrev * stride;
+        const float *pFarNext = data + farNext * stride;
+        for (int k = 0; k < 3; ++k)
+            out.append(pFarPrev[k]);
+        for (int k = 0; k < 3; ++k)
+            out.append(pFarNext[k]);
+    };
+    for (int j = 0; j < n; ++j) {
+        if (collapsed[j])
+            continue;
+        const Seg &s = segs[j];
+        int prev = s.a, next = s.b;
+        int farPrev = prev, farNext = next;
+        const int prevSeg = neighbour(j, -1);
+        if (prevSeg >= 0) {
+            prev = segs[prevSeg].a;
+            int farPrevSeg = prevSeg - 1;
+            if (farPrevSeg < 0 && closed)
+                farPrevSeg = n - 1;
+            if (farPrevSeg >= 0 && samePos(segs[farPrevSeg].b, segs[prevSeg].a))
+                farPrev = segs[farPrevSeg].a;
+            else
+                farPrev = prev;
+        }
+
+        const int nextSeg = neighbour(j, 1);
+        if (nextSeg >= 0) {
+            next = segs[nextSeg].b;
+            int farNextSeg = nextSeg + 1;
+            if (farNextSeg >= n && closed)
+                farNextSeg = 0;
+            if (farNextSeg < n && samePos(segs[farNextSeg].a, segs[nextSeg].b))
+                farNext = segs[farNextSeg].b;
+            else
+                farNext = next;
+        }
+        appendVert(prev, farPrev, farNext);
+        appendVert(s.a, farPrev, farNext);
+        appendVert(s.b, farPrev, farNext);
+        appendVert(next, farPrev, farNext);
+    }
+    return out;
 }
 
 } // namespace GlGeom

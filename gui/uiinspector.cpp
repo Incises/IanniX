@@ -22,10 +22,24 @@
 #include "uiinspector.h"
 #include "ui_uiinspector.h"
 
+#include <QSettings>
+
 UiInspector::UiInspector(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::UiInspector) {
     ui->setupUi(this);
+    ui->msaaSamplesCombo->addItem(tr("Off"), 0);
+    ui->msaaSamplesCombo->addItem(tr("2x"), 2);
+    ui->msaaSamplesCombo->addItem(tr("4x"), 4);
+    ui->msaaSamplesCombo->addItem(tr("8x"), 8);
+    ui->msaaSamplesCombo->setCurrentIndex(
+        qMax(0, ui->msaaSamplesCombo->findData(Application::msaaSamples)));
+    connect(ui->msaaSamplesCombo, qOverload<int>(&QComboBox::currentIndexChanged), this,
+            [this](int index) {
+                const QString settingsFile = Application::pathDocuments.absoluteFilePath() + "/Settings.ini";
+                QSettings settings(settingsFile, QSettings::IniFormat);
+                settings.setValue("msaaSamples", ui->msaaSamplesCombo->itemData(index).toInt());
+            });
     slidersLock = false;
     toolbarButton = 0;
     lastTabBeforeRessources = 0;

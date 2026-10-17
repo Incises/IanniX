@@ -22,12 +22,19 @@
 
 #include <QColor>
 #include <QMatrix4x4>
+#include <QSize>
 #include <QVector2D>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QVector>
+
+#ifndef GL_LINES_ADJACENCY
+#define GL_LINES_ADJACENCY 0x000A
+#endif
+
+class QOpenGLFramebufferObject;
 
 /**
  * Paint-time OpenGL helper (B-tier foundation).
@@ -51,6 +58,9 @@ public:
 
     void beginFrame();
     void endFrame();
+    // Resolve the internal MSAA target back to the widget FBO. Safe to call
+    // more than once per frame; needed before glCopyTexImage2D.
+    void resolveMsaa();
 
     void setProjection(const QMatrix4x4 &m);
     void setOrtho(float left, float right, float bottom, float top,
@@ -68,10 +78,12 @@ public:
     QMatrix4x4 modelView() const;
     QMatrix4x4 projection() const { return m_projection; }
     QMatrix4x4 mvp() const;
+    QVector2D viewportSize() const { return m_viewportSize; }
 
     void setColor(float r, float g, float b, float a);
     void setColor(const QColor &c);
     void setLineWidth(float w);
+    float lineWidth() const { return m_lineWidth; }
 
     enum TextureTarget { TextureNone, Texture2D, TextureRectangle };
     void bindTexture(TextureTarget target, GLuint id); // 0 unbinds
@@ -92,8 +104,13 @@ public:
     QOpenGLShaderProgram *textureRectProgram() { return m_textureRectReady ? &m_textureRectProgram : nullptr; }
     void applyUniforms(QOpenGLShaderProgram *prog, bool textured) const;
 
-    // Binds the right program for a draw (wide-line GS for line modes with
-    // width > 1, texture programs when textured) and applies uniforms.
+    static bool isLineMode(GLenum mode)
+    {
+        return mode == GL_LINES || mode == GL_LINE_STRIP || mode == GL_LINE_LOOP;
+    }
+
+    // Binds the right program for a draw (wide-line GS for untextured
+    // GL_LINES_ADJACENCY, texture programs when textured) and applies uniforms.
     // Returns nullptr if the draw should be skipped.
     QOpenGLShaderProgram *bindProgramFor(GLenum drawMode, bool textured);
 
@@ -108,7 +125,9 @@ private:
 
     bool compilePrograms();
     void ensureModelView();
+    void ensureMsaaTarget();
     void flushImmediate(GLenum drawMode, const QVector<float> &verts, int vertexCount);
+    void flushVertices(GLenum drawMode, const QVector<float> &verts, int vertexCount, bool textured);
 
     struct ImmVertex {
         float x, y, z, u, v;
@@ -139,8 +158,17 @@ private:
     QOpenGLShaderProgram m_textureRectProgram;
     QOpenGLShaderProgram m_wideLineProgram;
     QVector2D m_viewportSize;
+    QVector2D m_viewportOrigin;
     QOpenGLBuffer m_dynamicVbo;
     QOpenGLVertexArrayObject m_dynamicVao;
+
+    QOpenGLFramebufferObject *m_msaaFbo;
+    QSize m_msaaSize;
+    int m_msaaRequestedSamples;
+    GLuint m_msaaResolveFbo;
+    GLuint m_msaaResolveReadFbo;
+    GLint m_msaaResolveViewport[4];
+    bool m_msaaBound;
 };
 
 #endif // GLPAINTER_H

@@ -31,6 +31,7 @@ QFileInfo           Application::pathCurrent;
 QFileInfo           Application::pathTools;
 QFileInfo           Application::pathExamples;
 QFileInfo           Application::pathPatches;
+int                 Application::msaaSamples = 4;
 
 UiString Application::defaultMessageTrigger   = QString("osc://ip_out:port_out/trigger trigger_id trigger_group_id trigger_value_x trigger_value_y trigger_value_z trigger_xPos trigger_yPos trigger_zPos cursor_id cursor_group_id, midi://midi_out/notef 1 trigger_value_y trigger_value_x trigger_duration, tcp:// trigger trigger_id trigger_group_id trigger_value_x trigger_value_y trigger_value_z trigger_xPos trigger_yPos trigger_zPos cursor_id cursor_group_id");
 UiString Application::defaultMessageCursor    = QString("osc://ip_out:port_out/cursor cursor_id cursor_group_id cursor_value_x cursor_value_y cursor_value_z cursor_xPos cursor_yPos cursor_zPos, tcp:// cursor cursor_id cursor_group_id cursor_value_x cursor_value_y cursor_value_z cursor_xPos cursor_yPos cursor_zPos");
@@ -92,13 +93,8 @@ Render::Render(QWidget *parent, void *share)
 #else
 Render::Render(QWidget *parent, void*)
     : QOpenGLWidget(parent) {
-    QSurfaceFormat sf;
-    // B-tier end-state: OpenGL 3.3 Core. All draw paths use GlPainter/GlMesh.
-    sf.setVersion(3, 3);
-    sf.setProfile(QSurfaceFormat::CoreProfile);
-    sf.setDepthBufferSize(24);
-    sf.setSamples(qMax(0, int(4. / devicePixelRatioFScale())));
-    setFormat(sf);
+    // The app-wide QSurfaceFormat already sets the OpenGL version and the
+    // user's MSAA level before any widget creates a context.
 }
 #endif
 
