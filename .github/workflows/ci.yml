@@ -83,6 +83,16 @@ jobs:
           macdeployqt dist/stage/IanniX.app -libpath="$RUNNER_TEMP/deps/lib"
           codesign --force --deep --entitlements deploy/macos/entitlements.plist -s - dist/stage/IanniX.app
           codesign --verify --deep --strict dist/stage/IanniX.app
+          mkdir -p dist/macos/dmg
+          hdiutil create -volname "IanniX" -srcfolder dist/stage/IanniX.app -ov -format UDZO "dist/macos/dmg/IanniX-macOS-${{ matrix.arch }}.dmg"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-macOS-${{ matrix.arch }}
+          path: |
+            dist/macos/dmg/*.dmg
+            dist/macos/archive/*.tar.gz
 
   windows:
     name: Windows (x86_64)
@@ -155,7 +165,15 @@ jobs:
         run: |
           ./deploy/shared/stage.sh build dist/stage
           ./deploy/shared/cpack.sh ZIP dist/windows/archive
+          cp -f "$RUNNER_TEMP/deps/bin/"*.dll dist/stage/
           windeployqt-qt5 --no-angle --no-opengl-sw dist/stage/IanniX.exe
+          ldd dist/stage/IanniX.exe | awk '/=> \/ucrt64\/bin\// { print $3 }' | xargs -r -I{} cp -n "{}" dist/stage/
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-Windows-x86_64
+          path: dist/stage/*
 
   ubuntu:
     name: Ubuntu (${{ matrix.os }})
@@ -201,6 +219,12 @@ jobs:
           ./deploy/shared/stage.sh build dist/stage
           ./deploy/linux/deb/package.sh
 
+      - name: Upload Ubuntu DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-${{ matrix.os }}-deb
+          path: dist/linux/deb/*.deb
+
   opensuse:
     name: openSUSE Tumbleweed
     runs-on: ubuntu-24.04
@@ -242,6 +266,12 @@ jobs:
         run: |
           ./deploy/shared/stage.sh build dist/stage
           ./deploy/linux/rpm/package.sh
+
+      - name: Upload openSUSE RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-openSUSE-Tumbleweed-rpm
+          path: dist/linux/rpm/*.rpm
 
   fedora:
     name: Fedora (latest)
@@ -285,6 +315,12 @@ jobs:
           ./deploy/shared/stage.sh build dist/stage
           ./deploy/linux/rpm/package.sh
 
+      - name: Upload Fedora RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-Fedora-latest-rpm
+          path: dist/linux/rpm/*.rpm
+
   debian:
     name: Debian (Bookworm)
     runs-on: ubuntu-24.04
@@ -327,3 +363,9 @@ jobs:
         run: |
           ./deploy/shared/stage.sh build dist/stage
           ./deploy/linux/deb/package.sh
+
+      - name: Upload Debian DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-Debian-Bookworm-deb
+          path: dist/linux/deb/*.deb
