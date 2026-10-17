@@ -103,8 +103,20 @@ endif()
 # ---------------------------------------------------------------------------
 # System library dependencies (vendored copies removed)
 # ---------------------------------------------------------------------------
-find_package(muparser REQUIRED)
-find_package(RtMidi   REQUIRED)
+find_package(muparser QUIET)
+if(NOT TARGET muparser::muparser)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(MUPARSER REQUIRED IMPORTED_TARGET muparser)
+    add_library(muparser::muparser ALIAS PkgConfig::MUPARSER)
+endif()
+
+find_package(RtMidi QUIET)
+if(NOT TARGET RtMidi::rtmidi)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(RTMIDI REQUIRED IMPORTED_TARGET rtmidi)
+    add_library(RtMidi::rtmidi ALIAS PkgConfig::RTMIDI)
+endif()
+
 find_package(KF5SyntaxHighlighting REQUIRED
     HINTS /usr/lib64/cmake/KF5SyntaxHighlighting
 )

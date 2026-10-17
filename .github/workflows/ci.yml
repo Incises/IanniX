@@ -1,0 +1,194 @@
+name: CI (Linux)
+
+on:
+  push:
+    branches: [ testing, main, master ]
+  pull_request:
+    branches: [ testing, main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu:
+    name: Ubuntu (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-24.04, ubuntu-22.04 ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            g++ \
+            pkg-config \
+            file \
+            qtbase5-dev \
+            libqt5opengl5-dev \
+            qtdeclarative5-dev \
+            libqt5serialport5-dev \
+            libqt5websockets5-dev \
+            qttools5-dev \
+            libkf5syntaxhighlighting-dev \
+            libmuparser-dev \
+            librtmidi-dev \
+            libavcodec-dev \
+            libavutil-dev \
+            libavformat-dev \
+            libswscale-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUSE_FFMPEG=ON
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and DEB package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/deb/package.sh
+
+  opensuse:
+    name: openSUSE Tumbleweed
+    runs-on: ubuntu-24.04
+    container:
+      image: opensuse/tumbleweed:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          zypper --non-interactive refresh
+          zypper --non-interactive install \
+            git \
+            cmake \
+            ninja \
+            gcc-c++ \
+            pkg-config \
+            rpm-build \
+            libqt5-qtbase-devel \
+            libqt5-qtdeclarative-devel \
+            libqt5-qtserialport-devel \
+            libqt5-qtwebsockets-devel \
+            libqt5-qttools-devel \
+            syntax-highlighting-devel \
+            muparser-devel \
+            rtmidi-devel
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and RPM package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/rpm/package.sh
+
+  fedora:
+    name: Fedora (latest)
+    runs-on: ubuntu-24.04
+    container:
+      image: fedora:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y \
+            git \
+            cmake \
+            ninja-build \
+            gcc-c++ \
+            pkgconf-pkg-config \
+            rpm-build \
+            mesa-libGL-devel \
+            qt5-qtbase-devel \
+            qt5-qtdeclarative-devel \
+            qt5-qtserialport-devel \
+            qt5-qtwebsockets-devel \
+            qt5-linguist \
+            kf5-syntax-highlighting-devel \
+            muParser-devel \
+            rtmidi-devel
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and RPM package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/rpm/package.sh
+
+  debian:
+    name: Debian (Bookworm)
+    runs-on: ubuntu-24.04
+    container:
+      image: debian:bookworm
+
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            git \
+            cmake \
+            ninja-build \
+            g++ \
+            pkg-config \
+            file \
+            qtbase5-dev \
+            libqt5opengl5-dev \
+            qtdeclarative5-dev \
+            libqt5serialport5-dev \
+            libqt5websockets5-dev \
+            qttools5-dev \
+            libkf5syntaxhighlighting-dev \
+            libmuparser-dev \
+            librtmidi-dev \
+            libavcodec-dev \
+            libavutil-dev \
+            libavformat-dev \
+            libswscale-dev
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUSE_FFMPEG=ON
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and DEB package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/deb/package.sh

@@ -31,6 +31,7 @@ sudo zypper install \
     libqt5-qtserialport-devel \
     libqt5-qtwebsockets-devel \
     libqt5-qtx11extras-devel \
+    syntax-highlighting-devel \
     muparser-devel \
     rtmidi-devel
 ```
@@ -64,11 +65,13 @@ the runtime asset directories to `/usr/local/share/iannix/`.
 sudo apt install \
     cmake \
     g++ \
+    pkg-config \
     qtbase5-dev \
     libqt5opengl5-dev \
     qtdeclarative5-dev \
     libqt5serialport5-dev \
     libqt5websockets5-dev \
+    libkf5syntaxhighlighting-dev \
     libmuparser-dev \
     librtmidi-dev
 ```
