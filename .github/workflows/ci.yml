@@ -36,7 +36,7 @@ jobs:
         run: |
           QT_PREFIX="$(brew --prefix qt@5)"
           DEPS_PREFIX="$RUNNER_TEMP/deps"
-          echo "CMAKE_PREFIX_PATH=${QT_PREFIX};${DEPS_PREFIX}" >> "$GITHUB_ENV"
+          echo "CMAKE_PREFIX_PATH=${QT_PREFIX}:${DEPS_PREFIX}" >> "$GITHUB_ENV"
           echo "${QT_PREFIX}/bin" >> "$GITHUB_PATH"
 
           git clone --depth 1 --branch v5.115.0 https://github.com/KDE/extra-cmake-modules.git "$RUNNER_TEMP/ecm"
@@ -59,6 +59,9 @@ jobs:
           cmake --build "$RUNNER_TEMP/ksyntax/build"
           cmake --install "$RUNNER_TEMP/ksyntax/build"
 
+          KF5_CMAKE_DIR="$(dirname "$(find "$DEPS_PREFIX" -name "KF5SyntaxHighlightingConfig.cmake" | head -n 1)")"
+          echo "KF5SyntaxHighlighting_DIR=${KF5_CMAKE_DIR}" >> "$GITHUB_ENV"
+
       - name: Configure CMake
         run: |
           cmake -B build -S . -G Ninja \
@@ -77,7 +80,7 @@ jobs:
         run: |
           file dist/stage/IanniX.app/Contents/MacOS/IanniX
           file dist/stage/IanniX.app/Contents/Frameworks/Syphon.framework/Versions/A/Syphon
-          macdeployqt dist/stage/IanniX.app
+          macdeployqt dist/stage/IanniX.app -libpath="$RUNNER_TEMP/deps/lib"
           codesign --force --deep --entitlements deploy/macos/entitlements.plist -s - dist/stage/IanniX.app
           codesign --verify --deep --strict dist/stage/IanniX.app
 
