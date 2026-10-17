@@ -21,7 +21,7 @@
 
 #include "interfacesyphon.h"
 #include "ui_interfacesyphon.h"
-#import "/Library/Frameworks/Syphon.framework/Versions/A/Headers/Syphon.h"
+#import <Syphon/Syphon.h>
 
 InterfaceSyphon::InterfaceSyphon(QWidget *parent) :
     NetworkInterface(parent),
@@ -54,8 +54,8 @@ void InterfaceSyphon::initSyphonServer() {
 void InterfaceSyphon::releaseSyphonServer() {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    [(SyphonServer *)serverSyphon stop];
-    [(SyphonServer *)serverSyphon release];
+    [(SyphonOpenGLServer *)serverSyphon stop];
+    [(SyphonOpenGLServer *)serverSyphon release];
 
     [pool drain];
 }
@@ -63,7 +63,7 @@ void InterfaceSyphon::releaseSyphonServer() {
 void InterfaceSyphon::createSyphonServer() {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    serverSyphon = [[SyphonServer alloc] initWithName:nil context:CGLGetCurrentContext() options:nil];
+    serverSyphon = [[SyphonOpenGLServer alloc] initWithName:nil context:CGLGetCurrentContext() options:nil];
     serverInit = true;
 
     [pool drain];
@@ -74,7 +74,8 @@ void InterfaceSyphon::createSyphonClient() {
     SyphonServerDirectory *servers = [SyphonServerDirectory sharedDirectory];
     if(servers) {
         if([servers.servers count] > 0) {
-            clientSyphon = [[SyphonClient alloc] initWithServerDescription:[servers.servers objectAtIndex:0] options:nil newFrameHandler:^(SyphonClient *clientSyphon) {
+            clientSyphon = [[SyphonOpenGLClient alloc] initWithServerDescription:[servers.servers objectAtIndex:0] context:CGLGetCurrentContext() options:nil newFrameHandler:^(SyphonOpenGLClient *client) {
+                Q_UNUSED(client);
                 clientInit = true;
                 clientTextureOk = true;
             }];
@@ -86,13 +87,13 @@ void InterfaceSyphon::createSyphonClient() {
 
 void InterfaceSyphon::publishTexture(int textureTarget, int width, int height) {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    [(SyphonServer *)serverSyphon publishFrameTexture:serverTexture textureTarget:textureTarget imageRegion:NSMakeRect(0, 0, width, height) textureDimensions:NSMakeSize(width, height) flipped:false];
+    [(SyphonOpenGLServer *)serverSyphon publishFrameTexture:serverTexture textureTarget:textureTarget imageRegion:NSMakeRect(0, 0, width, height) textureDimensions:NSMakeSize(width, height) flipped:false];
     [pool drain];
 }
 
 GLuint InterfaceSyphon::getTexture(QSizeF *size) {
     clientTextureOk = false;
-    SyphonImage *frame = [(SyphonClient*)clientSyphon newFrameImageForContext:CGLGetCurrentContext()];
+    SyphonOpenGLImage *frame = [(SyphonOpenGLClient*)clientSyphon newFrameImage];
     if(frame) {
         clientTexture = frame.textureName;
         if(size) {

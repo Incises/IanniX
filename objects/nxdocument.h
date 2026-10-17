@@ -29,6 +29,7 @@
 #include <QFileInfo>
 #include <QInputDialog>
 #include <QFileSystemWatcher>
+#include <QPointer>
 #include "misc/application.h"
 #include "objects/nxgroup.h"
 #include "interfaces/extscriptvariableask.h"
@@ -41,7 +42,7 @@ class NxDocument : public QObject, public QTreeWidgetItem, public MessageDispatc
 
 public:
     ExecuteSource source;
-    UiFileItem *fileItem;
+    QPointer<UiFileItem> fileItem;
     QString initialContent;
     bool skipClose;
 public slots:

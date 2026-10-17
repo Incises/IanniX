@@ -226,6 +226,18 @@ void IanniXApp::launch(int &argc, char **argv) {
                                                          pathApplicationDir.absolutePath());
 #endif
 
+    // Bundled Examples and Patches are copied into ~/Documents/IanniX so user
+    // edits live in a writable user folder and survive app updates — on macOS,
+    // saving into the bundle would break its code signature. Copy missing files
+    // only — user edits are never overwritten; deleting a file restores the
+    // original at next launch.
+    Application::pathExamplesBundle = Application::pathExamples;
+    Application::pathPatchesBundle  = Application::pathPatches;
+    Application::syncBundleContent(Application::pathExamplesBundle.absoluteFilePath(), Application::pathDocuments.absoluteFilePath() + "/Examples");
+    Application::syncBundleContent(Application::pathPatchesBundle .absoluteFilePath(), Application::pathDocuments.absoluteFilePath() + "/Patches");
+    Application::pathExamples = QFileInfo(Application::pathDocuments.absoluteFilePath() + "/Examples");
+    Application::pathPatches  = QFileInfo(Application::pathDocuments.absoluteFilePath() + "/Patches");
+
     qDebug("Paths");
     qDebug("\tDocuments  : %s", qPrintable(Application::pathDocuments  .absoluteFilePath()));
     qDebug("\tApplication: %s", qPrintable(Application::pathApplication.absoluteFilePath()));

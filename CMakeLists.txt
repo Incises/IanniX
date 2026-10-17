@@ -28,6 +28,7 @@ set(IANNIX_LINUX_APP_ICON "${IANNIX_DEPLOY_LINUX_DIR}/iannix.png")
 set(IANNIX_MACOS_INFO_PLIST "${IANNIX_DEPLOY_MACOS_DIR}/Info.plist")
 set(IANNIX_MACOS_APP_ICON "${IANNIX_DEPLOY_MACOS_DIR}/icon.icns")
 set(IANNIX_MACOS_FILE_ICON "${IANNIX_DEPLOY_MACOS_DIR}/icon_file.icns")
+set(IANNIX_MACOS_FRAMEWORKS_DIR "${IANNIX_DEPLOY_MACOS_DIR}/frameworks")
 set(IANNIX_WINDOWS_ICON_RC "${IANNIX_DEPLOY_WINDOWS_DIR}/icon.rc")
 
 set(IANNIX_RUNTIME_RESOURCE_DIRS Examples Tools Patches)
@@ -103,8 +104,20 @@ endif()
 # ---------------------------------------------------------------------------
 # System library dependencies (vendored copies removed)
 # ---------------------------------------------------------------------------
-find_package(muparser REQUIRED)
-find_package(RtMidi   REQUIRED)
+find_package(muparser QUIET)
+if(NOT TARGET muparser::muparser)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(MUPARSER REQUIRED IMPORTED_TARGET muparser)
+    add_library(muparser::muparser ALIAS PkgConfig::MUPARSER)
+endif()
+
+find_package(RtMidi QUIET)
+if(NOT TARGET RtMidi::rtmidi)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(RTMIDI REQUIRED IMPORTED_TARGET rtmidi)
+    add_library(RtMidi::rtmidi ALIAS PkgConfig::RTMIDI)
+endif()
+
 find_package(KF5SyntaxHighlighting REQUIRED
     HINTS /usr/lib64/cmake/KF5SyntaxHighlighting
 )
@@ -143,7 +156,7 @@ endif()
 # Platform compile definitions
 # ---------------------------------------------------------------------------
 if(APPLE)
-    add_compile_definitions(__MACOSX_CORE__ IANNIX_64 SYPHON_INSTALLED)
+    add_compile_definitions(__MACOSX_CORE__ IANNIX_64 SYPHON_INSTALLED GL_SILENCE_DEPRECATION)
 elseif(WIN32)
     add_compile_definitions(__WINDOWS_MM__ IANNIX_64)
 elseif(UNIX)
@@ -434,6 +447,10 @@ if(APPLE)
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE
         ${ALL_SOURCES} ${ALL_FORMS} ${RESOURCES}
     )
+elseif(WIN32)
+    add_executable(${PROJECT_NAME} WIN32
+        ${ALL_SOURCES} ${ALL_FORMS} ${RESOURCES}
+    )
 else()
     add_executable(${PROJECT_NAME}
         ${ALL_SOURCES} ${ALL_FORMS} ${RESOURCES}
@@ -480,6 +497,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS} muparser::muparser RtMi
 # Platform-specific libraries
 # ---------------------------------------------------------------------------
 if(APPLE)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        "-F${IANNIX_MACOS_FRAMEWORKS_DIR}"
+        "-F/Library/Frameworks"
+    )
     target_link_libraries(${PROJECT_NAME} PRIVATE
         "-framework CoreMidi"
         "-framework CoreAudio"
@@ -487,9 +508,13 @@ if(APPLE)
         "-framework IOKit"
         "-framework Carbon"
         "-framework Cocoa"
+        "-framework OpenGL"
         "-framework Syphon"
     )
-    target_link_options(${PROJECT_NAME} PRIVATE -F/Library/Frameworks)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "-F${IANNIX_MACOS_FRAMEWORKS_DIR}"
+        "-F/Library/Frameworks"
+    )
 
 elseif(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -514,7 +539,18 @@ if(APPLE)
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.iannix.desktop"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        INSTALL_RPATH "@executable_path/../Frameworks"
+        BUILD_WITH_INSTALL_RPATH TRUE
     )
+
+    if(IS_DIRECTORY "${IANNIX_MACOS_FRAMEWORKS_DIR}/Syphon.framework")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Frameworks"
+            COMMAND cp -a "${IANNIX_MACOS_FRAMEWORKS_DIR}/Syphon.framework" "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Frameworks/"
+            COMMENT "Bundling Syphon.framework into IanniX.app/Contents/Frameworks"
+            VERBATIM
+        )
+    endif()
 
     set(BUNDLE_ICON       "${IANNIX_MACOS_APP_ICON}")
     set(BUNDLE_ICON_FILE  "${IANNIX_MACOS_FILE_ICON}")
@@ -530,7 +566,12 @@ if(APPLE)
             foreach(_file ${_files})
                 get_filename_component(_file_dir "${_file}" DIRECTORY)
                 set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/${_file}"
-                    PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/${_file_dir}"
+                    PROPERTIES
+                        MACOSX_PACKAGE_LOCATION "Resources/${_file_dir}"
+                        HEADER_FILE_ONLY TRUE
+                        SKIP_AUTOMOC ON
+                        SKIP_AUTOUIC ON
+                        SKIP_AUTORCC ON
                 )
                 target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${_file}")
             endforeach()
@@ -568,6 +609,7 @@ elseif(WIN32)
 elseif(UNIX AND NOT APPLE)
     install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES "${IANNIX_LINUX_DESKTOP_FILE}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+    install(FILES "${IANNIX_LINUX_APP_ICON}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps)
     install(FILES "${IANNIX_LINUX_APP_ICON}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps)
     iannix_install_resource_directories("${CMAKE_INSTALL_DATAROOTDIR}/iannix")
 endif()

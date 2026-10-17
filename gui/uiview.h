@@ -46,6 +46,7 @@ private:
     QPoint previousPos;
     QSize previousSize;
     QList<QPushButton*> fullscreenButtons;
+    QAction *actionBorderlessMode;
 
 public:
     UiRender*        getRender() const;
@@ -61,6 +62,7 @@ public slots:
     void showTransport();
     void showInspector();
     void showEditor();
+    void actionToggleBorderlessMode();
 
     void toggleFullscreen(bool);
     void goToFullscreen();

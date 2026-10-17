@@ -69,7 +69,7 @@ void BonjourServiceRegister::registerService(const BonjourRecord &record, quint1
             emit error(kDNSServiceErr_Invalid);
         } else {
             bonjourSocket = new QSocketNotifier(sockfd, QSocketNotifier::Read, this);
-            connect(bonjourSocket, qOverload<int>(&QSocketNotifier::activated), this, &BonjourServiceRegister::bonjourSocketReadyRead);
+            connect(bonjourSocket, &QSocketNotifier::activated, this, &BonjourServiceRegister::bonjourSocketReadyRead);
         }
     }
 }

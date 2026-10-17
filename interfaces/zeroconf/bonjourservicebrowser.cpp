@@ -55,7 +55,7 @@ void BonjourServiceBrowser::browseForServiceType(const QString &serviceType)
             emit error(kDNSServiceErr_Invalid);
         } else {
             bonjourSocket = new QSocketNotifier(sockfd, QSocketNotifier::Read, this);
-            connect(bonjourSocket, qOverload<int>(&QSocketNotifier::activated), this, &BonjourServiceBrowser::bonjourSocketReadyRead);
+            connect(bonjourSocket, &QSocketNotifier::activated, this, &BonjourServiceBrowser::bonjourSocketReadyRead);
         }
     }
 }

@@ -20,6 +20,9 @@
 */
 
 #include "uitreeviewwidget.h"
+#include <QMenu>
+#include <QContextMenuEvent>
+#include "uifileitem.h"
 
 namespace {
 
@@ -44,4 +47,16 @@ void UiTreeViewWidget::dragEnterEvent(QDragEnterEvent *event) {
 void UiTreeViewWidget::dropEvent(QDropEvent *event) {
     emit(dropEvent(currentItem(), itemAt(dropEventPosition(event))));
     event->acceptProposedAction();
+}
+
+void UiTreeViewWidget::contextMenuEvent(QContextMenuEvent *event) {
+    UiFileItem *item = dynamic_cast<UiFileItem*>(itemAt(event->pos()));
+    if(!item) {
+        QTreeWidget::contextMenuEvent(event);
+        return;
+    }
+    QMenu menu(this);
+    QAction *reveal = menu.addAction(tr("Reveal in Finder"));
+    if(menu.exec(event->globalPos()) == reveal)
+        item->fileShowInFinder();
 }

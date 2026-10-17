@@ -182,6 +182,7 @@ public slots:
     void zoomIn();
     void zoomOut();
     void zoomInitial();
+    void resetView();
 
 signals:
     void objectSelected(UiRenderSelection);
@@ -294,11 +295,15 @@ public:
     InterfaceSyphon *interfaceSyphon;
 public:
     void setPerformanceMode(bool _performanceMode);
+    void toggleBorderlessMode();
+    bool isBorderlessMode() const { return borderlessMode; }
 private:
-    bool renderPreviewTextureInit, performanceMode;
+    bool renderPreviewTextureInit, performanceMode, borderlessMode;
     GLuint renderPreviewTexture;
 private:
     GLuint destinationTexture, workingTexture;
+public:
+    void adjustOpacity(bool increase);
 };
 
 #endif //RENDER_H

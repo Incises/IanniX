@@ -1,0 +1,370 @@
+name: CI
+
+on:
+  push:
+    branches: [ testing, main ]
+  pull_request:
+    branches: [ testing, main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    name: macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew dependencies
+        run: |
+          brew install cmake ninja pkg-config qt@5 muparser rtmidi
+
+      - name: Build and install KF5SyntaxHighlighting
+        run: |
+          QT_PREFIX="$(brew --prefix qt@5)"
+          DEPS_PREFIX="$RUNNER_TEMP/deps"
+          echo "CMAKE_PREFIX_PATH=${QT_PREFIX}:${DEPS_PREFIX}" >> "$GITHUB_ENV"
+          echo "${QT_PREFIX}/bin" >> "$GITHUB_PATH"
+
+          git clone --depth 1 --branch v5.115.0 https://github.com/KDE/extra-cmake-modules.git "$RUNNER_TEMP/ecm"
+          cmake -S "$RUNNER_TEMP/ecm" -B "$RUNNER_TEMP/ecm/build" -G Ninja \
+            -DCMAKE_INSTALL_PREFIX="$DEPS_PREFIX" \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_HTML_DOCS=OFF \
+            -DBUILD_MAN_DOCS=OFF \
+            -DBUILD_QTHELP_DOCS=OFF
+          cmake --build "$RUNNER_TEMP/ecm/build"
+          cmake --install "$RUNNER_TEMP/ecm/build"
+
+          git clone --depth 1 --branch v5.115.0 https://github.com/KDE/syntax-highlighting.git "$RUNNER_TEMP/ksyntax"
+          cmake -S "$RUNNER_TEMP/ksyntax" -B "$RUNNER_TEMP/ksyntax/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="${QT_PREFIX};${DEPS_PREFIX}" \
+            -DCMAKE_INSTALL_PREFIX="$DEPS_PREFIX" \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_QCH=OFF
+          cmake --build "$RUNNER_TEMP/ksyntax/build"
+          cmake --install "$RUNNER_TEMP/ksyntax/build"
+
+          KF5_CMAKE_DIR="$(dirname "$(find "$DEPS_PREFIX" -name "KF5SyntaxHighlightingConfig.cmake" | head -n 1)")"
+          echo "KF5SyntaxHighlighting_DIR=${KF5_CMAKE_DIR}" >> "$GITHUB_ENV"
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="${{ matrix.arch }}"
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and archive package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/macos/archive/package.sh
+
+      - name: Verify architecture, bundle Qt, and ad-hoc sign
+        run: |
+          file dist/stage/IanniX.app/Contents/MacOS/IanniX
+          file dist/stage/IanniX.app/Contents/Frameworks/Syphon.framework/Versions/A/Syphon
+          macdeployqt dist/stage/IanniX.app -libpath="$RUNNER_TEMP/deps/lib"
+          codesign --force --deep --entitlements deploy/macos/entitlements.plist -s - dist/stage/IanniX.app
+          codesign --verify --deep --strict dist/stage/IanniX.app
+          mkdir -p dist/macos/dmg
+          hdiutil create -volname "IanniX" -srcfolder dist/stage/IanniX.app -ov -format UDZO "dist/macos/dmg/IanniX-macOS-${{ matrix.arch }}.dmg"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-macOS-${{ matrix.arch }}
+          path: dist/macos/dmg/*.dmg
+
+  windows:
+    name: Windows (x86_64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            perl
+            mingw-w64-ucrt-x86_64-cc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-qt5-base
+            mingw-w64-ucrt-x86_64-qt5-declarative
+            mingw-w64-ucrt-x86_64-qt5-serialport
+            mingw-w64-ucrt-x86_64-qt5-websockets
+            mingw-w64-ucrt-x86_64-qt5-tools
+            mingw-w64-ucrt-x86_64-muparser
+            mingw-w64-ucrt-x86_64-rtmidi
+
+      - name: Build and install KF5SyntaxHighlighting
+        run: |
+          DEPS_PREFIX="$(cygpath -m "$RUNNER_TEMP")/deps"
+
+          git clone --depth 1 --branch v5.115.0 https://github.com/KDE/extra-cmake-modules.git "$RUNNER_TEMP/ecm"
+          cmake -S "$RUNNER_TEMP/ecm" -B "$RUNNER_TEMP/ecm/build" -G Ninja \
+            -DCMAKE_INSTALL_PREFIX="$DEPS_PREFIX" \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_HTML_DOCS=OFF \
+            -DBUILD_MAN_DOCS=OFF \
+            -DBUILD_QTHELP_DOCS=OFF
+          cmake --build "$RUNNER_TEMP/ecm/build"
+          cmake --install "$RUNNER_TEMP/ecm/build"
+
+          git clone --depth 1 --branch v5.115.0 https://github.com/KDE/syntax-highlighting.git "$RUNNER_TEMP/ksyntax"
+          cmake -S "$RUNNER_TEMP/ksyntax" -B "$RUNNER_TEMP/ksyntax/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$DEPS_PREFIX" \
+            -DCMAKE_INSTALL_PREFIX="$DEPS_PREFIX" \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_QCH=OFF
+          cmake --build "$RUNNER_TEMP/ksyntax/build"
+          cmake --install "$RUNNER_TEMP/ksyntax/build"
+
+      - name: Configure CMake
+        run: |
+          DEPS_PREFIX="$(cygpath -m "$RUNNER_TEMP")/deps"
+          KF5_CMAKE_DIR="$(cygpath -m "$(dirname "$(find "$RUNNER_TEMP/deps" -name "KF5SyntaxHighlightingConfig.cmake" | head -n 1)")")"
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$DEPS_PREFIX" \
+            -DKF5SyntaxHighlighting_DIR="$KF5_CMAKE_DIR"
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and bundle dependencies
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          cp -f "$RUNNER_TEMP/deps/bin/"*.dll dist/stage/
+          windeployqt-qt5 --no-angle --no-opengl-sw dist/stage/IanniX.exe
+          find dist/stage -type f \( -name "*.exe" -o -name "*.dll" \) -exec ldd {} + \
+            | awk '/=> \/ucrt64\/bin\// { print $3 }' | sort -u \
+            | xargs -r -I{} cp -n "{}" dist/stage/
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-Windows-x86_64
+          path: dist/stage/*
+
+  ubuntu:
+    name: Ubuntu (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-24.04, ubuntu-22.04 ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            g++ \
+            pkg-config \
+            file \
+            qtbase5-dev \
+            libqt5opengl5-dev \
+            qtdeclarative5-dev \
+            libqt5serialport5-dev \
+            libqt5websockets5-dev \
+            qttools5-dev \
+            libkf5syntaxhighlighting-dev \
+            libmuparser-dev \
+            librtmidi-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and DEB package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/deb/package.sh
+
+      - name: Upload Ubuntu DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-${{ matrix.os }}-deb
+          path: dist/linux/deb/*.deb
+
+  opensuse:
+    name: openSUSE Tumbleweed
+    runs-on: ubuntu-24.04
+    container:
+      image: opensuse/tumbleweed:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          zypper --non-interactive refresh
+          zypper --non-interactive install \
+            git \
+            cmake \
+            ninja \
+            gcc-c++ \
+            pkg-config \
+            rpm-build \
+            libqt5-qtbase-devel \
+            libqt5-qtdeclarative-devel \
+            libqt5-qtserialport-devel \
+            libqt5-qtwebsockets-devel \
+            libqt5-qttools-devel \
+            syntax-highlighting-devel \
+            muparser-devel \
+            rtmidi-devel
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and RPM package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/rpm/package.sh
+
+      - name: Upload openSUSE RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-openSUSE-Tumbleweed-rpm
+          path: dist/linux/rpm/*.rpm
+
+  fedora:
+    name: Fedora (latest)
+    runs-on: ubuntu-24.04
+    container:
+      image: fedora:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y \
+            git \
+            cmake \
+            ninja-build \
+            gcc-c++ \
+            pkgconf-pkg-config \
+            rpm-build \
+            mesa-libGL-devel \
+            qt5-qtbase-devel \
+            qt5-qtdeclarative-devel \
+            qt5-qtserialport-devel \
+            qt5-qtwebsockets-devel \
+            qt5-linguist \
+            kf5-syntax-highlighting-devel \
+            muParser-devel \
+            rtmidi-devel
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and RPM package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/rpm/package.sh
+
+      - name: Upload Fedora RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-Fedora-latest-rpm
+          path: dist/linux/rpm/*.rpm
+
+  debian:
+    name: Debian (Bookworm)
+    runs-on: ubuntu-24.04
+    container:
+      image: debian:bookworm
+
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            git \
+            cmake \
+            ninja-build \
+            g++ \
+            pkg-config \
+            file \
+            qtbase5-dev \
+            libqt5opengl5-dev \
+            qtdeclarative5-dev \
+            libqt5serialport5-dev \
+            libqt5websockets5-dev \
+            qttools5-dev \
+            libkf5syntaxhighlighting-dev \
+            libmuparser-dev \
+            librtmidi-dev
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Verify staged install and DEB package
+        run: |
+          ./deploy/shared/stage.sh build dist/stage
+          ./deploy/linux/deb/package.sh
+
+      - name: Upload Debian DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IanniX-Debian-Bookworm-deb
+          path: dist/linux/deb/*.deb

@@ -59,6 +59,15 @@ private:
     QList<UiSyncItem*> selectionClipboard;
     QList<UiSyncItem*> getSelection(bool shouldHaveParent = true);
     UiSyncItem *currentDocument;
+    void setCurrentDocument(UiSyncItem *doc) {
+        currentDocument = doc;
+        if(QObject *obj = dynamic_cast<QObject*>(doc)) {
+            connect(obj, &QObject::destroyed, this, [this, doc]() {
+                if(currentDocument == doc)
+                    currentDocument = 0;
+            });
+        }
+    }
 public:
     bool importAsFiles;
     UiSyncItem* getCurrentDocument() const { return currentDocument; }
