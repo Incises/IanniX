@@ -438,6 +438,10 @@ if(APPLE)
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE
         ${ALL_SOURCES} ${ALL_FORMS} ${RESOURCES}
     )
+elseif(WIN32)
+    add_executable(${PROJECT_NAME} WIN32
+        ${ALL_SOURCES} ${ALL_FORMS} ${RESOURCES}
+    )
 else()
     add_executable(${PROJECT_NAME}
         ${ALL_SOURCES} ${ALL_FORMS} ${RESOURCES}

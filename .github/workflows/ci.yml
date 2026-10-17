@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ testing, main, fix-windows-build ]
+    branches: [ testing, main ]
   pull_request:
     branches: [ testing, main ]
   workflow_dispatch:
@@ -90,9 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: IanniX-macOS-${{ matrix.arch }}
-          path: |
-            dist/macos/dmg/*.dmg
-            dist/macos/archive/*.tar.gz
+          path: dist/macos/dmg/*.dmg
 
   windows:
     name: Windows (x86_64)
@@ -161,13 +159,14 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
-      - name: Verify staged install, bundle Qt, and archive package
+      - name: Verify staged install and bundle dependencies
         run: |
           ./deploy/shared/stage.sh build dist/stage
-          ./deploy/shared/cpack.sh ZIP dist/windows/archive
           cp -f "$RUNNER_TEMP/deps/bin/"*.dll dist/stage/
           windeployqt-qt5 --no-angle --no-opengl-sw dist/stage/IanniX.exe
-          ldd dist/stage/IanniX.exe | awk '/=> \/ucrt64\/bin\// { print $3 }' | xargs -r -I{} cp -n "{}" dist/stage/
+          find dist/stage -type f \( -name "*.exe" -o -name "*.dll" \) -exec ldd {} + \
+            | awk '/=> \/ucrt64\/bin\// { print $3 }' | sort -u \
+            | xargs -r -I{} cp -n "{}" dist/stage/
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
