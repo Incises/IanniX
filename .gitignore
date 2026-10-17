@@ -26,4 +26,5 @@ GEMINI.md
 # Generated documentation
 *.pdf
 site/
+*.local.env
 /IanniX-Apple-Silicon/
