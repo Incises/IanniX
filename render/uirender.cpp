@@ -42,7 +42,7 @@ UiRender::UiRender(QWidget *parent, void *share) :
     setFocusPolicy(Qt::StrongFocus);
 #ifdef USE_OPENGLWIDGET
     renderTextTextureIndex = 0;
-    renderTextFont = OpenGlFont::getFont(Application::renderFont.family(), Qt::AlignLeft, Application::renderFont.pixelSize());
+    renderTextFont = OpenGlFont::getFont(Application::renderFont.family(), Qt::AlignLeft, qRound(Application::renderFont.pixelSize() * OpenGlDrawing::dpi));
 #endif
 
     //Initialize view
@@ -116,13 +116,10 @@ bool UiRender::loadTexture(UiRenderTexture *texture, bool gl) {
             QImage tex = img.convertToFormat(QImage::Format_RGBA8888).mirrored();
 #endif
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.bits());
-#ifdef Q_OS_MAC
-            glGenerateMipmap(GL_TEXTURE_2D);
+            QOpenGLFunctions glFuncs(QOpenGLContext::currentContext());
+            glFuncs.glGenerateMipmap(GL_TEXTURE_2D);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-#else
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-#endif
             glDisable(GL_TEXTURE_2D);
             texture->originalSize = tex.size();
             texture->loaded = true;
@@ -253,6 +250,9 @@ void UiRender::initializeGL() {
     glFuncs.glHint(GL_POINT_SMOOTH_HINT,   GL_NICEST);
     glFuncs.glHint(GL_LINE_SMOOTH_HINT,    GL_NICEST);
     glFuncs.glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+#ifdef GL_MULTISAMPLE
+    glFuncs.glEnable(GL_MULTISAMPLE);
+#endif
     glFuncs.glEnable(GL_POINT_SMOOTH);
     glFuncs.glEnable(GL_LINE_SMOOTH);
     glFuncs.glEnable(GL_POLYGON_SMOOTH);
@@ -1418,7 +1418,7 @@ void UiRender::renderText(qreal x, qreal y, qreal z, const QString &text, const 
         }
 
         //glScalef(0.05/(scale*OpenGlDrawing::dpi), -0.05/(scale*OpenGlDrawing::dpi), 0.05/(scale*OpenGlDrawing::dpi));
-        qreal textScale = getAutoScale(1) * 0.06;
+        qreal textScale = getAutoScale(1) * 0.06 / OpenGlDrawing::dpi;
         glScalef(textScale, -textScale, textScale);
         textTextureToUse->pushTexture();
         glBegin(GL_QUADS);

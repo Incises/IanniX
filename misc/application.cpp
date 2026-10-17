@@ -108,12 +108,8 @@ Render::Render(QWidget *parent, void *share)
 #else
 Render::Render(QWidget *parent, void*)
     : QOpenGLWidget(parent) {
-    QSurfaceFormat sf;
-    //sf.setProfile(QSurfaceFormat::CompatibilityProfile);
-    //sf.setRenderableType(QSurfaceFormat::OpenGL);
-    //sf.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    //sf.setOption(QSurfaceFormat::DeprecatedFunctions);
-    sf.setSamples(4./devicePixelRatioFScale());
+    QSurfaceFormat sf = QSurfaceFormat::defaultFormat();
+    sf.setSamples(4);
     setFormat(sf);
 }
 #endif

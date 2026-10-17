@@ -28,12 +28,8 @@ UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
 UiRenderPreview::UiRenderPreview(QWidget *parent, void *shared) :
     QOpenGLWidget(parent) {
     Q_UNUSED(shared);
-    QSurfaceFormat sf;
-    //sf.setProfile(QSurfaceFormat::CompatibilityProfile);
-    //sf.setRenderableType(QSurfaceFormat::OpenGL);
-    //sf.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    //sf.setOption(QSurfaceFormat::DeprecatedFunctions);
-    sf.setSamples(4./devicePixelRatioFScale());
+    QSurfaceFormat sf = QSurfaceFormat::defaultFormat();
+    sf.setSamples(4);
     setFormat(sf);
 #endif
     setFocusPolicy(Qt::StrongFocus);
