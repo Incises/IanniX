@@ -553,7 +553,12 @@ if(APPLE)
             foreach(_file ${_files})
                 get_filename_component(_file_dir "${_file}" DIRECTORY)
                 set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/${_file}"
-                    PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/${_file_dir}"
+                    PROPERTIES
+                        MACOSX_PACKAGE_LOCATION "Resources/${_file_dir}"
+                        HEADER_FILE_ONLY TRUE
+                        SKIP_AUTOMOC ON
+                        SKIP_AUTOUIC ON
+                        SKIP_AUTORCC ON
                 )
                 target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${_file}")
             endforeach()

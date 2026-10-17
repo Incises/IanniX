@@ -54,8 +54,8 @@ void InterfaceSyphon::initSyphonServer() {
 void InterfaceSyphon::releaseSyphonServer() {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    [(SyphonServer *)serverSyphon stop];
-    [(SyphonServer *)serverSyphon release];
+    [(SyphonOpenGLServer *)serverSyphon stop];
+    [(SyphonOpenGLServer *)serverSyphon release];
 
     [pool drain];
 }
@@ -63,7 +63,7 @@ void InterfaceSyphon::releaseSyphonServer() {
 void InterfaceSyphon::createSyphonServer() {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    serverSyphon = [[SyphonServer alloc] initWithName:nil context:CGLGetCurrentContext() options:nil];
+    serverSyphon = [[SyphonOpenGLServer alloc] initWithName:nil context:CGLGetCurrentContext() options:nil];
     serverInit = true;
 
     [pool drain];
@@ -87,7 +87,7 @@ void InterfaceSyphon::createSyphonClient() {
 
 void InterfaceSyphon::publishTexture(int textureTarget, int width, int height) {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    [(SyphonServer *)serverSyphon publishFrameTexture:serverTexture textureTarget:textureTarget imageRegion:NSMakeRect(0, 0, width, height) textureDimensions:NSMakeSize(width, height) flipped:false];
+    [(SyphonOpenGLServer *)serverSyphon publishFrameTexture:serverTexture textureTarget:textureTarget imageRegion:NSMakeRect(0, 0, width, height) textureDimensions:NSMakeSize(width, height) flipped:false];
     [pool drain];
 }
 
