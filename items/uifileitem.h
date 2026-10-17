@@ -28,6 +28,7 @@
 #include <QMessageBox>
 #include <QFileSystemWatcher>
 #include <QTreeWidgetItem>
+#include <QHeaderView>
 #include "uitreeview.h"
 #include "misc/options.h"
 #include "gui/uimessagebox.h"
@@ -42,6 +43,23 @@ public:
     UiFile filename;
     bool isFile;
     bool isOpened;
+
+    // Public re-list hook (e.g. after the macOS folder-permission prompt).
+    // Calls syncWith directly: the watcher path goes through currentDepth,
+    // which is still -1 (= no-op) when the initial listing failed.
+    void refreshFromDisk() { syncWith(5); }
+
+    // Unsaved scores (no file on disk yet, e.g. "New score") sort first.
+    bool operator<(const QTreeWidgetItem &other) const {
+        const UiFileItem *otherFile = dynamic_cast<const UiFileItem*>(&other);
+        const bool meVirtual    = isFile && !filename.file.exists();
+        const bool otherVirtual = (otherFile) && otherFile->isFile && !otherFile->filename.file.exists();
+        if(meVirtual != otherVirtual) {
+            const bool ascending = (treeWidget()) && (treeWidget()->header()->sortIndicatorOrder() == Qt::AscendingOrder);
+            return meVirtual ? ascending : !ascending;
+        }
+        return QTreeWidgetItem::operator<(other);
+    }
     static QIcon iconFile, iconFileOpened, iconFolder;
     static bool showDateTime;
 

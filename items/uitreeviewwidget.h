@@ -34,6 +34,7 @@ public:
 protected:
     void dragEnterEvent(QDragEnterEvent *);
     void dropEvent(QDropEvent *);
+    void contextMenuEvent(QContextMenuEvent *);
     
 signals:
     void dropEvent(QTreeWidgetItem*, QTreeWidgetItem*);

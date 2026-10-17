@@ -94,7 +94,7 @@ void UiTreeView::askNew() {
             foreach(UiSyncItem* item, items) {
                 UiSyncItem *newItem = item->askForNewChild(item, false);
                 if((newItem) && (newItem->askForOpen(newItem))) {
-                    currentDocument = newItem;
+                    setCurrentDocument(newItem);
                     emit(currentDocumentChanged(currentDocument));
                 }
                 return;
@@ -121,7 +121,7 @@ void UiTreeView::askOpen() {
                 if(currentDocument)
                     currentDocument->askForClose(currentDocument);
                 if(syncItem->askForOpen(syncItem)) {
-                    currentDocument = syncItem;
+                    setCurrentDocument(syncItem);
                     emit(currentDocumentChanged(currentDocument));
                     break;
                 }

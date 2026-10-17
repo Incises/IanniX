@@ -20,6 +20,7 @@
 */
 
 #include "uiinspector.h"
+#include <QTimer>
 #include "ui_uiinspector.h"
 
 UiInspector::UiInspector(QWidget *parent) :
@@ -105,7 +106,19 @@ UiInspector::UiInspector(QWidget *parent) :
 
     ui->files->importAsFiles = false;
     UiFileItem::configure(ui->files);
-    UiFileItem::syncWith(QFileInfoList() << QFileInfo(Application::pathExamples.absoluteFilePath() + "/") << QFileInfo(Application::pathDocuments.absoluteFilePath() + "/"), ui->files->getTree());
+    UiFileItem::syncWith(QFileInfoList() << QFileInfo(Application::pathDocuments.absoluteFilePath() + "/"), ui->files->getTree());
+    // First launch: the macOS Documents-folder permission prompt can race the
+    // initial listing, leaving the browser empty until restart. Re-list once
+    // the dialog has had a chance to be answered.
+    foreach(const int delay, QList<int>() << 3000 << 8000 << 20000)
+        QTimer::singleShot(delay, this, [this]() {
+            // The very first copy can also have failed before permission was granted.
+            Application::syncBundleContent(Application::pathExamplesBundle.absoluteFilePath(), Application::pathDocuments.absoluteFilePath() + "/Examples");
+            Application::syncBundleContent(Application::pathPatchesBundle .absoluteFilePath(), Application::pathDocuments.absoluteFilePath() + "/Patches");
+            UiFileItem::syncWith(QFileInfoList() << QFileInfo(Application::pathDocuments.absoluteFilePath() + "/"), ui->files->getTree());
+            for(quint16 i = 0 ; i < ui->files->getTree()->topLevelItemCount() ; i++)
+                ((UiFileItem*)ui->files->getTree()->topLevelItem(i))->refreshFromDisk();
+        });
     ui->files->getTree()->collapseAll();
     for(quint16 i = 0 ; i < ui->files->getTree()->topLevelItemCount() ; i++) {
         UiFileItem *searchItem = ((UiFileItem*)ui->files->getTree()->topLevelItem(i))->find(Application::pathApplication.absoluteFilePath() + "/IanniX/");
@@ -1010,6 +1023,10 @@ void UiInspector::showRessourcesTab(const QString &) {
     ui->ssTabInfo->setCurrentIndex(4);
 }
 void UiInspector::showConfigTab() {
+    // Reveal the Inspector dock if it was closed, then jump to Config.
+    if(parentWidget())
+        parentWidget()->show();
+    raise();
     ui->tab->setCurrentIndex(3);
 }
 

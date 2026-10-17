@@ -21,7 +21,7 @@
 
 #include "interfacesyphon.h"
 #include "ui_interfacesyphon.h"
-#import "/Library/Frameworks/Syphon.framework/Versions/A/Headers/Syphon.h"
+#import <Syphon/Syphon.h>
 
 InterfaceSyphon::InterfaceSyphon(QWidget *parent) :
     NetworkInterface(parent),
@@ -74,7 +74,8 @@ void InterfaceSyphon::createSyphonClient() {
     SyphonServerDirectory *servers = [SyphonServerDirectory sharedDirectory];
     if(servers) {
         if([servers.servers count] > 0) {
-            clientSyphon = [[SyphonClient alloc] initWithServerDescription:[servers.servers objectAtIndex:0] options:nil newFrameHandler:^(SyphonClient *clientSyphon) {
+            clientSyphon = [[SyphonOpenGLClient alloc] initWithServerDescription:[servers.servers objectAtIndex:0] context:CGLGetCurrentContext() options:nil newFrameHandler:^(SyphonOpenGLClient *client) {
+                Q_UNUSED(client);
                 clientInit = true;
                 clientTextureOk = true;
             }];
@@ -92,7 +93,7 @@ void InterfaceSyphon::publishTexture(int textureTarget, int width, int height) {
 
 GLuint InterfaceSyphon::getTexture(QSizeF *size) {
     clientTextureOk = false;
-    SyphonImage *frame = [(SyphonClient*)clientSyphon newFrameImageForContext:CGLGetCurrentContext()];
+    SyphonOpenGLImage *frame = [(SyphonOpenGLClient*)clientSyphon newFrameImage];
     if(frame) {
         clientTexture = frame.textureName;
         if(size) {

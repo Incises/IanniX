@@ -469,6 +469,8 @@ QDialogButtonBox QPushButton {
     <addaction name="actionReloadScript"/>
     <addaction name="actionClose_score"/>
     <addaction name="separator"/>
+    <addaction name="actionPatchesFolder"/>
+    <addaction name="separator"/>
     <addaction name="actionImport_Text"/>
     <addaction name="actionImport_SVG"/>
     <addaction name="actionImport_Background"/>
@@ -500,6 +502,7 @@ QDialogButtonBox QPushButton {
     <addaction name="actionToggle_Transport"/>
     <addaction name="actionShowEditor"/>
     <addaction name="actionShowTimer"/>
+    <addaction name="actionShowHelp"/>
     <addaction name="separator"/>
     <addaction name="actionGrid"/>
     <addaction name="actionSnapXGrid"/>
@@ -508,6 +511,7 @@ QDialogButtonBox QPushButton {
     <addaction name="separator"/>
     <addaction name="actionZoom_in"/>
     <addaction name="actionZoom_initial"/>
+    <addaction name="actionResetView"/>
     <addaction name="actionZoom_out"/>
     <addaction name="separator"/>
     <addaction name="actionResize"/>
@@ -1033,6 +1037,23 @@ QDialogButtonBox QPushButton {
     <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
+  <action name="actionResetView">
+   <property name="text">
+    <string>Reset view (2D)</string>
+   </property>
+   <property name="toolTip">
+    <string>Resets camera rotation, pan and zoom — object editing only works in the flat 2D view</string>
+   </property>
+   <property name="statusTip">
+    <string>Reset view|Object selection and editing are disabled while the camera is rotated in 3D. This resets rotation, pan and zoom back to the flat 2D view (same as Alt+double-click on the score).</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+0</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
   <action name="actionDrawFreeCurve">
    <property name="checkable">
     <bool>true</bool>
@@ -1130,6 +1151,9 @@ QDialogButtonBox QPushButton {
    </property>
    <property name="statusTip">
     <string>Cursors|In IanniX vocabulary, a cursor is a playhead. While running on a curve, it can fire triggers, sends its position or reads curve values. If the cursor is not linked to a curve, it will not move automatically, but you can control it from another software or hardware (sensors…).\n\nDouble click on a cursor to change the sent messages.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
@@ -1928,6 +1952,12 @@ QDialogButtonBox QPushButton {
    </property>
    <property name="toolTip">
     <string>Opens the Config tab in Inspector</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+,</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionSave_score_as">

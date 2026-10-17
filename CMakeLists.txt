@@ -28,6 +28,7 @@ set(IANNIX_LINUX_APP_ICON "${IANNIX_DEPLOY_LINUX_DIR}/iannix.png")
 set(IANNIX_MACOS_INFO_PLIST "${IANNIX_DEPLOY_MACOS_DIR}/Info.plist")
 set(IANNIX_MACOS_APP_ICON "${IANNIX_DEPLOY_MACOS_DIR}/icon.icns")
 set(IANNIX_MACOS_FILE_ICON "${IANNIX_DEPLOY_MACOS_DIR}/icon_file.icns")
+set(IANNIX_MACOS_FRAMEWORKS_DIR "${IANNIX_DEPLOY_MACOS_DIR}/frameworks")
 set(IANNIX_WINDOWS_ICON_RC "${IANNIX_DEPLOY_WINDOWS_DIR}/icon.rc")
 
 set(IANNIX_RUNTIME_RESOURCE_DIRS Examples Tools Patches)
@@ -155,7 +156,7 @@ endif()
 # Platform compile definitions
 # ---------------------------------------------------------------------------
 if(APPLE)
-    add_compile_definitions(__MACOSX_CORE__ IANNIX_64 SYPHON_INSTALLED)
+    add_compile_definitions(__MACOSX_CORE__ IANNIX_64 SYPHON_INSTALLED GL_SILENCE_DEPRECATION)
 elseif(WIN32)
     add_compile_definitions(__WINDOWS_MM__ IANNIX_64)
 elseif(UNIX)
@@ -483,6 +484,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_LIBS} muparser::muparser RtMi
 # Platform-specific libraries
 # ---------------------------------------------------------------------------
 if(APPLE)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        "-F${IANNIX_MACOS_FRAMEWORKS_DIR}"
+        "-F/Library/Frameworks"
+    )
     target_link_libraries(${PROJECT_NAME} PRIVATE
         "-framework CoreMidi"
         "-framework CoreAudio"
@@ -490,9 +495,13 @@ if(APPLE)
         "-framework IOKit"
         "-framework Carbon"
         "-framework Cocoa"
+        "-framework OpenGL"
         "-framework Syphon"
     )
-    target_link_options(${PROJECT_NAME} PRIVATE -F/Library/Frameworks)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "-F${IANNIX_MACOS_FRAMEWORKS_DIR}"
+        "-F/Library/Frameworks"
+    )
 
 elseif(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -517,7 +526,18 @@ if(APPLE)
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.iannix.desktop"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        INSTALL_RPATH "@executable_path/../Frameworks"
+        BUILD_WITH_INSTALL_RPATH TRUE
     )
+
+    if(IS_DIRECTORY "${IANNIX_MACOS_FRAMEWORKS_DIR}/Syphon.framework")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Frameworks"
+            COMMAND cp -a "${IANNIX_MACOS_FRAMEWORKS_DIR}/Syphon.framework" "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Frameworks/"
+            COMMENT "Bundling Syphon.framework into IanniX.app/Contents/Frameworks"
+            VERBATIM
+        )
+    endif()
 
     set(BUNDLE_ICON       "${IANNIX_MACOS_APP_ICON}")
     set(BUNDLE_ICON_FILE  "${IANNIX_MACOS_FILE_ICON}")

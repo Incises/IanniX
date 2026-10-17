@@ -56,6 +56,7 @@ UiRender::UiRender(QWidget *parent, void *share) :
     renderPreviewTextureInit = false;
     destinationTexture = workingTexture = 0;
     performanceMode = false;
+    borderlessMode = false;
 
     //Légende
     legendColor = Qt::white;
@@ -227,7 +228,11 @@ void UiRender::setPerformanceMode(bool _performanceMode) {
     performanceMode = _performanceMode;
     if(performanceMode) {
         setParent(0);
-        setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+        if(borderlessMode) {
+            setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+        } else {
+            setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+        }
         move(pos());
         resize(size());
         show();
@@ -448,6 +453,10 @@ void UiRender::paintGL() {
             if(!interfaceSyphon->serverTexture)
                 glGenTextures(1, &interfaceSyphon->serverTexture);
             glBindTexture(GL_TEXTURE_2D, interfaceSyphon->serverTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, renderSize.width() * OpenGlDrawing::dpi, renderSize.height() * OpenGlDrawing::dpi, 0);
             interfaceSyphon->publishTexture(GL_TEXTURE_2D, renderSize.width() * OpenGlDrawing::dpi, renderSize.height() * OpenGlDrawing::dpi);
             glDisable(GL_TEXTURE_2D);
@@ -994,6 +1003,19 @@ void UiRender::keyPressEvent(QKeyEvent *event) {
     if((event->modifiers() & Qt::ShiftModifier) == Qt::ShiftModifier)
         translationUnit = 1;
 
+#ifdef Q_OS_MAC
+    if(performanceMode &&
+       (event->modifiers() & Qt::MetaModifier) &&
+       event->key() == Qt::Key_B) {
+#else
+    if(performanceMode &&
+       (event->modifiers() & Qt::ControlModifier) &&
+       event->key() == Qt::Key_B) {
+#endif
+        toggleBorderlessMode();
+        return;
+    }
+
     NxPoint translation;
     if(event->key() == Qt::Key_Left)
         translation += NxPoint(translationUnit, 0);
@@ -1135,6 +1157,15 @@ void UiRender::zoomOut() {
     setZoom(Render::zoomValue + 5);
 }
 void UiRender::zoomInitial() {
+    setZoom(100);
+}
+void UiRender::resetView() {
+    // Back to the editable 2D view: selection is disabled while the camera
+    // is rotated, and the only other reset is Alt+double-click on the score.
+    cameraPerspectiveChanged();
+    Application::current->execute(QString("%1 0 0 0").arg(COMMAND_ROTATE), ExecuteSourceGui);
+    Application::current->execute(QString("%1 0 0").arg(COMMAND_CENTER), ExecuteSourceGui);
+    translationDest = NxPoint();
     setZoom(100);
 }
 
@@ -1401,3 +1432,23 @@ void UiRender::renderText(qreal x, qreal y, qreal z, const QString &text, const 
     }
 }
 #endif
+
+void UiRender::toggleBorderlessMode() {
+    borderlessMode = !borderlessMode;
+    if(performanceMode) {
+        if(borderlessMode) {
+            setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+        } else {
+            setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+        }
+        show();
+        activateWindow();
+    }
+}
+
+void UiRender::adjustOpacity(bool increase) {
+    qreal currentOpacity = windowOpacity();
+    qreal newOpacity = increase ? currentOpacity + 0.1 : currentOpacity - 0.1;
+    newOpacity = qBound(0.1, newOpacity, 1.0);
+    setWindowOpacity(newOpacity);
+}

@@ -44,7 +44,6 @@ UiFileItem::UiFileItem(const QFileInfo &file, UiFileItem *_parent, QFileSystemWa
     }
     isFile = true;
     populate(file);
-    highlight();
 }
 
 const QString UiFileItem::dateToString(const QDateTime &date) {
@@ -98,12 +97,14 @@ void UiFileItem::populate(const QFileInfo &file) {
         for(quint16 colIndex = 0 ; colIndex < 3 ; colIndex++)
             setForeground(colIndex, Qt::lightGray);
         setIcon(0, iconFolder);
+        setToolTip(0, filename.file.absoluteFilePath());
     }
     else if(filename.file.isFile()) {
         isFile  = true;
         filename    .setItemSync(this);
         openInFinder.setItemSync(this);
         setIcon(0, iconFile);
+        setToolTip(0, filename.file.absoluteFilePath());
     }
     connect(&filename,     &UiString::triggered, this, qOverload<>(&UiFileItem::fileRename));
     connect(&openInFinder, &UiBool::triggered,   this, &UiFileItem::fileShowInFinder);

@@ -38,6 +38,21 @@ UiView::UiView(QWidget *parent) :
     ui->actionDelete->setShortcut(QKeySequence::Delete);
 #endif
 
+    // Create the Borderless Mode action
+    actionBorderlessMode = new QAction(tr("Borderless mode"), this);
+    actionBorderlessMode->setCheckable(true);
+    actionBorderlessMode->setStatusTip(tr("Removes window borders when in performance mode"));
+#ifdef Q_OS_MAC
+    actionBorderlessMode->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_B));
+#else
+    actionBorderlessMode->setShortcut(QKeySequence(Qt::META | Qt::Key_B));
+#endif
+    connect(actionBorderlessMode, &QAction::triggered, this, &UiView::actionToggleBorderlessMode);
+
+    // Add the action to the Display menu
+    ui->menuView->addSeparator();
+    ui->menuView->addAction(actionBorderlessMode);
+
     //About
     about = new UiAbout();
 
@@ -83,6 +98,7 @@ UiView::UiView(QWidget *parent) :
     connect(ui->actionZoom_in,           &QAction::triggered, ui->render, &UiRender::zoomIn);
     connect(ui->actionZoom_out,          &QAction::triggered, ui->render, &UiRender::zoomOut);
     connect(ui->actionZoom_initial,      &QAction::triggered, ui->render, &UiRender::zoomInitial);
+    connect(ui->actionResetView,         &QAction::triggered, ui->render, &UiRender::resetView);
     connect(ui->actionAbout,             &QAction::triggered, about, &QWidget::show);
     connect(ui->actionPreferences,       &QAction::triggered, ui->inspector, &UiInspector::showConfigTab);
     connect(ui->actionQuit,              &QAction::triggered, this, &QWidget::close);
@@ -188,6 +204,15 @@ bool UiView::getPerformancePreview() const {
 }
 
 void UiView::keyPressEvent(QKeyEvent *event) {
+    if(event->modifiers() & Qt::MetaModifier) {
+        if(event->key() == Qt::Key_BracketLeft) {
+            ui->render->adjustOpacity(false);
+            return;
+        } else if(event->key() == Qt::Key_BracketRight) {
+            ui->render->adjustOpacity(true);
+            return;
+        }
+    }
     ui->render->keyPressEvent(event);
 }
 void UiView::closeEvent(QCloseEvent *event) {
@@ -628,4 +653,8 @@ void UiView::editingMove(const NxPoint & point, bool add, bool mouseState) {
         freehandCurveIndex--;
         editingStopWithoutRemoval(isLoop);
     }
+}
+
+void UiView::actionToggleBorderlessMode() {
+    ui->render->toggleBorderlessMode();
 }
