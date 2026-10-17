@@ -23,8 +23,12 @@
 #include "drivers/vlc.h"
 #endif
 #ifdef Q_OS_WIN
+#ifndef GL_TEXTURE_RECTANGLE_ARB
 #define GL_TEXTURE_RECTANGLE_ARB   GL_TEXTURE_2D
+#endif
+#ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE           GL_REPEAT
+#endif
 #endif
 #ifdef OPENCV_INSTALLED
 #include <iostream>

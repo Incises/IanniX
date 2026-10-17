@@ -43,7 +43,7 @@ UiRender::UiRender(QWidget *parent, void *share) :
     setFocusPolicy(Qt::StrongFocus);
 #ifdef USE_OPENGLWIDGET
     renderTextTextureIndex = 0;
-    renderTextFont = OpenGlFont::getFont(Application::renderFont.family(), Qt::AlignLeft, Application::renderFont.pixelSize());
+    renderTextFont = OpenGlFont::getFont(Application::renderFont.family(), Qt::AlignLeft, qRound(Application::renderFont.pixelSize() * OpenGlDrawing::dpi));
 #endif
 
     //Initialize view
@@ -115,13 +115,10 @@ bool UiRender::loadTexture(UiRenderTexture *texture, bool gl) {
             QImage tex = img.convertToFormat(QImage::Format_RGBA8888).mirrored();
 #endif
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.bits());
-#ifdef Q_OS_MAC
-            glGenerateMipmap(GL_TEXTURE_2D);
+            QOpenGLFunctions glFuncs(QOpenGLContext::currentContext());
+            glFuncs.glGenerateMipmap(GL_TEXTURE_2D);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-#else
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-#endif
             glBindTexture(GL_TEXTURE_2D, 0);
             texture->originalSize = tex.size();
             texture->loaded = true;
@@ -1381,10 +1378,8 @@ void UiRender::arrangeObjects(quint16 type) {
 
 #ifdef USE_OPENGLWIDGET
 void UiRender::renderText(qreal x, qreal y, qreal z, const QString &text, const QFont &, bool billboarded) {
-    while(OpenGlTexture::textures.count() < 500) {
-        OpenGlTexture *texte = new OpenGlTexture(this, text, renderTextFont, QSizeF(1024, 128) * OpenGlDrawing::dpi);
-        OpenGlTexture::textures.append(texte);
-    }
+    while(OpenGlTexture::textures.count() < 500)
+        new OpenGlTexture(this, QString(), renderTextFont, QSizeF(1024, 128) * OpenGlDrawing::dpi);
     OpenGlTexture *textTextureToUse = 0;
     foreach(OpenGlTexture *textTexture, OpenGlTexture::textures)
         if(textTexture->texte == text) {
@@ -1411,7 +1406,7 @@ void UiRender::renderText(qreal x, qreal y, qreal z, const QString &text, const 
             g->rotate(float(Render::rotation.y()), -1, 0, 0);
         }
 
-        qreal textScale = getAutoScale(1) * 0.06;
+        qreal textScale = getAutoScale(1) * 0.06 / OpenGlDrawing::dpi;
         g->scale(float(textScale), float(-textScale), float(textScale));
         if (textTextureToUse->pushTexture()) {
             g->bindTexture(GlPainter::Texture2D, textTextureToUse->texture);

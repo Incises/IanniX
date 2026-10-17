@@ -143,9 +143,9 @@ int main(int argc, char *argv[]) {
     }
 
     IanniXApp iannixApp(argc, argv);
-#ifdef Q_OS_LINUX
-    // The GTK2 style plugin (system default on this distro) predates High DPI
-    // and renders menus with oversized rows and squashed icons on 2x displays.
+#ifndef Q_OS_MAC
+    // The GTK2 / Windows Vista native style plugins predate fractional High DPI
+    // and can render menus/controls with jagged edges or broken metrics on scaled displays.
     // Fusion is HiDPI-safe; the UI is skinned by its own stylesheets anyway.
     iannixApp.setStyle(new CompactIconStyle(QStyleFactory::create(QStringLiteral("Fusion"))));
 #else
