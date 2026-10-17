@@ -41,17 +41,12 @@ jobs:
             qttools5-dev \
             libkf5syntaxhighlighting-dev \
             libmuparser-dev \
-            librtmidi-dev \
-            libavcodec-dev \
-            libavutil-dev \
-            libavformat-dev \
-            libswscale-dev
+            librtmidi-dev
 
       - name: Configure CMake
         run: |
           cmake -B build -S . -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DUSE_FFMPEG=ON
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build build --config Release
@@ -170,11 +165,7 @@ jobs:
             qttools5-dev \
             libkf5syntaxhighlighting-dev \
             libmuparser-dev \
-            librtmidi-dev \
-            libavcodec-dev \
-            libavutil-dev \
-            libavformat-dev \
-            libswscale-dev
+            librtmidi-dev
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -182,8 +173,7 @@ jobs:
       - name: Configure CMake
         run: |
           cmake -B build -S . -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DUSE_FFMPEG=ON
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build build --config Release
