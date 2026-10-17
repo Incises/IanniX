@@ -155,7 +155,7 @@ jobs:
         run: |
           ./deploy/shared/stage.sh build dist/stage
           ./deploy/shared/cpack.sh ZIP dist/windows/archive
-          windeployqt-qt5 dist/stage/IanniX.exe
+          windeployqt-qt5 --no-angle --no-opengl-sw dist/stage/IanniX.exe
 
   ubuntu:
     name: Ubuntu (${{ matrix.os }})
